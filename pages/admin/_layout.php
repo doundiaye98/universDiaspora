@@ -1,0 +1,126 @@
+<?php
+declare(strict_types=1);
+
+/** @var array{title?:string, content:string, flash?:array<string,string>} $view */
+$title = $view['title'] ?? 'Admin';
+$content = $view['content'] ?? '';
+$flash = $view['flash'] ?? [];
+
+$config = require __DIR__ . '/../../config/config.php';
+$baseUrl = rtrim($config['app']['base_url'], '/');
+
+admin_require_login($baseUrl);
+$csrf = admin_csrf_token();
+$currentPage = (string)($_GET['page'] ?? 'admin');
+
+function adminNavLink(string $href, string $label, bool $active = false, bool $danger = false): string
+{
+    $cls = 'ud-admin-nav__link' . ($active ? ' is-active' : '') . ($danger ? ' ud-admin-nav__link--danger' : '');
+    return '<a class="' . $cls . '" href="' . h($href) . '">' . h($label) . '</a>';
+}
+
+?><!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= h($title) ?></title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="<?= h($baseUrl) ?>/public/assets/css/style.css" rel="stylesheet">
+</head>
+<body class="ud-body ud-admin-shell">
+
+<div class="ud-admin-shell__wrap">
+  <!-- Mobile topbar -->
+  <header class="ud-admin-topbar d-lg-none">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <button class="btn ud-admin-topbar__btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#udAdminNav" aria-controls="udAdminNav" aria-label="Ouvrir le menu admin">
+        <span class="ud-admin-topbar__burger"></span>
+      </button>
+      <div class="ud-admin-topbar__title">Admin</div>
+      <a class="btn ud-admin-topbar__btn" href="<?= h($baseUrl) ?>/?action=admin-logout">Quitter</a>
+    </div>
+  </header>
+
+  <!-- Desktop sidebar -->
+  <aside class="ud-admin-side d-none d-lg-flex">
+    <a class="ud-admin-side__brand" href="<?= h($baseUrl) ?>/?page=admin">
+      <img src="<?= h($baseUrl) ?>/public/assets/img/logo-univers-diaspora.jpg" alt="" width="44" height="44">
+      <div>
+        <div class="ud-admin-side__title">Admin</div>
+        <div class="ud-admin-side__sub">Univers Diaspora</div>
+      </div>
+    </a>
+
+    <nav class="ud-admin-nav">
+      <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+      <div class="ud-admin-nav__divider"></div>
+      <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
+      <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>
+    </nav>
+
+    <div class="ud-admin-side__foot small text-muted">
+      CSRF: <?= h(substr($csrf, 0, 8)) ?>…
+    </div>
+  </aside>
+
+  <!-- Mobile offcanvas nav -->
+  <div class="offcanvas offcanvas-start ud-admin-offcanvas d-lg-none" tabindex="-1" id="udAdminNav" aria-labelledby="udAdminNavLabel">
+    <div class="offcanvas-header">
+      <div class="d-flex align-items-center gap-2">
+        <img src="<?= h($baseUrl) ?>/public/assets/img/logo-univers-diaspora.jpg" alt="" width="42" height="42" style="border-radius:14px;">
+        <div>
+          <div id="udAdminNavLabel" class="ud-admin-side__title">Admin</div>
+          <div class="ud-admin-side__sub">Univers Diaspora</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+    </div>
+    <div class="offcanvas-body">
+      <nav class="ud-admin-nav">
+        <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+        <div class="ud-admin-nav__divider"></div>
+        <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
+        <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>
+      </nav>
+      <div class="small text-muted mt-3">CSRF: <?= h(substr($csrf, 0, 8)) ?>…</div>
+    </div>
+  </div>
+
+  <div class="ud-admin-main">
+    <header class="ud-admin-main__top">
+      <div>
+        <div class="ud-admin-kicker">Administration</div>
+        <div class="ud-admin-sub">Connecté en tant que <strong><?= h($_SESSION['admin']['username'] ?? 'admin') ?></strong></div>
+      </div>
+    </header>
+
+    <?php if (!empty($flash['success'])): ?>
+      <div class="container mt-3">
+        <div class="alert alert-success mb-0"><?= h($flash['success']) ?></div>
+      </div>
+    <?php endif; ?>
+    <?php if (!empty($flash['error'])): ?>
+      <div class="container mt-3">
+        <div class="alert alert-danger mb-0"><?= h($flash['error']) ?></div>
+      </div>
+    <?php endif; ?>
+
+    <main class="ud-admin-main__content">
+      <?= $content ?>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
