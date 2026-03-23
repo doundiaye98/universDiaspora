@@ -29,6 +29,9 @@ function ensureContactSchema(PDO $pdo): void
           `email` VARCHAR(190) NOT NULL,
           `phone` VARCHAR(50) NULL,
           `message` TEXT NULL,
+          `status` VARCHAR(20) NOT NULL DEFAULT \'pending\',
+          `confirmed_at` DATETIME NULL,
+          `confirmed_by` VARCHAR(80) NULL,
           `ip` VARCHAR(45) NULL,
           `user_agent` VARCHAR(255) NULL,
           `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -38,6 +41,34 @@ function ensureContactSchema(PDO $pdo): void
           KEY `idx_email` (`email`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
+
+    // If appointments table already exists (created earlier), add missing columns.
+    $hasStatus = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'status'"
+    )->fetchColumn();
+    if ($hasStatus === 0) {
+        $pdo->exec("ALTER TABLE appointments ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'");
+    }
+    $hasConfirmedAt = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'confirmed_at'"
+    )->fetchColumn();
+    if ($hasConfirmedAt === 0) {
+        $pdo->exec("ALTER TABLE appointments ADD COLUMN confirmed_at DATETIME NULL");
+    }
+    $hasConfirmedBy = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'confirmed_by'"
+    )->fetchColumn();
+    if ($hasConfirmedBy === 0) {
+        $pdo->exec("ALTER TABLE appointments ADD COLUMN confirmed_by VARCHAR(80) NULL");
+    }
+
+    // Index on status for faster filtering
+    $hasStatusIdx = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND INDEX_NAME = 'idx_appointments_status'"
+    )->fetchColumn();
+    if ($hasStatusIdx === 0) {
+        $pdo->exec("ALTER TABLE appointments ADD INDEX idx_appointments_status (status)");
+    }
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS `admin_users` (

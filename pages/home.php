@@ -87,7 +87,7 @@ ob_start();
           $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
         ?>
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="ud-service-card h-100">
+          <div class="ud-service-card h-100 ud-reveal" data-reveal-index="<?= (int)($s['sort_order'] ?? 0) ?>">
             <div class="ud-service-card__top">
               <a class="ud-service-card__icon" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?> aria-label="<?= h($s['title']) ?>">
                 <img src="<?= h($baseUrl) ?>/public/assets/img/<?= h($s['icon']) ?>" alt="<?= h($s['title']) ?>">
@@ -271,6 +271,26 @@ ob_start();
     </div>
   </div>
 </section>
+<?php if (true): ?>
+<script>
+(() => {
+  const cards = document.querySelectorAll('.ud-service-card.ud-reveal');
+  if (!cards.length) return;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        el.classList.add('is-inview');
+        io.unobserve(el);
+      }
+    });
+  }, { threshold: 0.18 });
+
+  cards.forEach((c) => io.observe(c));
+})();
+</script>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 

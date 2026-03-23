@@ -60,6 +60,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
       <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
       <div class="ud-admin-nav__divider"></div>
       <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
       <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>
@@ -87,6 +88,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
         <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
         <div class="ud-admin-nav__divider"></div>
         <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
         <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>

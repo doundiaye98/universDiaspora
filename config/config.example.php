@@ -20,5 +20,12 @@ return [
         'username' => 'admin',
         'password' => 'admin123',
     ],
+    'mail' => [
+        // Active l'envoi d’emails via PHP `mail()`.
+        // Par défaut désactivé pour éviter toute erreur si la conf SMTP n'est pas OK.
+        'enable' => false,
+        'to' => 'contact@universdiaspora.com',
+        'from' => 'no-reply@universdiaspora.com',
+    ],
 ];
 

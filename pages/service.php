@@ -123,6 +123,15 @@ ob_start();
       </div>
     </div>
 
+    <?php if (!empty(trim((string)($service['details'] ?? '')))): ?>
+      <div class="mt-4 ud-surface">
+        <h2 class="h5 mb-3">Détails</h2>
+        <div class="ud-about-p">
+          <?= nl2br(h((string)$service['details'])) ?>
+        </div>
+      </div>
+    <?php endif; ?>
+
     <div class="ud-related mt-5">
       <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
         <div>

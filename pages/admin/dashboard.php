@@ -16,108 +16,223 @@ $counts = [
 ];
 
 $latestContacts = $pdo->query('SELECT id, last_name, first_name, email, phone, created_at FROM contact_messages ORDER BY id DESC LIMIT 8')->fetchAll();
-$latestAppointments = $pdo->query('SELECT id, office, appointment_at, name, email, phone, created_at FROM appointments ORDER BY id DESC LIMIT 8')->fetchAll();
+$latestAppointments = $pdo->query('SELECT id, office, appointment_at, name, email, phone, status, created_at FROM appointments ORDER BY id DESC LIMIT 8')->fetchAll();
+
+// Build a single activity timeline (mixed)
+$timeline = [];
+foreach ($latestContacts as $c) {
+    $timeline[] = [
+        'type' => 'contact',
+        'ts' => (string)($c['created_at'] ?? ''),
+        'title' => trim((string)($c['first_name'] ?? '') . ' ' . (string)($c['last_name'] ?? '')),
+        'subtitle' => (string)($c['email'] ?? ''),
+        'meta' => (string)($c['phone'] ?? ''),
+    ];
+}
+foreach ($latestAppointments as $a) {
+    $status = (string)($a['status'] ?? 'pending');
+    $statusLabel = $status === 'confirmed' ? 'Confirmé' : ($status === 'cancelled' ? 'Annulé' : 'En attente');
+    $timeline[] = [
+        'type' => 'appointment',
+        'ts' => (string)($a['appointment_at'] ?? ''),
+        'title' => (string)($a['name'] ?? ''),
+        'subtitle' => (string)($a['office'] ?? ''),
+        'meta' => trim(
+            ((string)($a['email'] ?? '') !== '' ? (string)($a['email'] ?? '') : '')
+            . ' '
+            . ((string)($a['phone'] ?? '') !== '' ? '• ' . (string)($a['phone'] ?? '') : '')
+            . ' • Statut: ' . $statusLabel
+        ),
+    ];
+}
+usort($timeline, static function (array $x, array $y): int {
+    return strcmp((string)$y['ts'], (string)$x['ts']);
+});
+$timeline = array_slice($timeline, 0, 10);
 
 ob_start();
 ?>
-<div class="container py-4">
+<div class="container py-4 ud-admin-dashboard">
+  <div class="ud-admin-hero mb-4">
+    <div class="ud-admin-hero__content">
+      <div class="ud-admin-kicker">Dashboard</div>
+      <h1 class="ud-admin-hero__title mb-2">Espace d’administration</h1>
+      <p class="ud-admin-hero__sub mb-0">
+        Vue rapide sur vos demandes et pages à gérer. Tout est prêt pour être mis à jour depuis l’admin.
+      </p>
+    </div>
+    <div class="ud-admin-hero__actions">
+      <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=admin-services">Gérer services</a>
+      <a class="btn btn-primary ud-btn ud-btn--shine" href="<?= h($baseUrl) ?>/?page=admin-admins">Gérer admins</a>
+    </div>
+  </div>
+
   <div class="row g-3 mb-4">
     <div class="col-12 col-md-6 col-xl-3">
-      <a class="ud-admin-metric ud-admin-metric--link" href="<?= h($baseUrl) ?>/?page=admin-services">
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-services">
         <div class="ud-admin-metric__label">Services</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['services'] ?></div>
-        <div class="ud-admin-metric__hint">Gérer les pages</div>
+        <div class="ud-admin-metric__hint">Actifs dans le site</div>
       </a>
     </div>
     <div class="col-12 col-md-6 col-xl-3">
-      <div class="ud-admin-metric">
+      <div class="ud-admin-metric ud-admin-stat">
         <div class="ud-admin-metric__label">Messages contact</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['contacts'] ?></div>
-        <div class="ud-admin-metric__hint">Total reçus</div>
+        <div class="ud-admin-metric__hint">Demandes reçues</div>
       </div>
     </div>
     <div class="col-12 col-md-6 col-xl-3">
-      <div class="ud-admin-metric">
+      <div class="ud-admin-metric ud-admin-stat">
         <div class="ud-admin-metric__label">Rendez‑vous</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['appointments'] ?></div>
-        <div class="ud-admin-metric__hint">Demandes</div>
+        <div class="ud-admin-metric__hint">Demandes enregistrées</div>
       </div>
     </div>
     <div class="col-12 col-md-6 col-xl-3">
-      <a class="ud-admin-metric ud-admin-metric--link" href="<?= h($baseUrl) ?>/?page=admin-admins">
-        <div class="ud-admin-metric__label">Admins</div>
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-admins">
+        <div class="ud-admin-metric__label">Administrateurs</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['admins'] ?></div>
-        <div class="ud-admin-metric__hint">Accès</div>
+        <div class="ud-admin-metric__hint">Accès admin</div>
       </a>
     </div>
   </div>
 
-  <div class="row g-4">
-    <div class="col-12 col-lg-6">
-      <div class="ud-admin-panel">
+  <div class="row g-4 align-items-start">
+    <div class="col-12 col-lg-7">
+      <div class="ud-admin-panel ud-admin-panel--hero">
         <div class="ud-admin-panel__head">
-          <div class="ud-admin-panel__title">Derniers messages (Contact)</div>
-          <div class="ud-admin-panel__meta"><?= count($latestContacts) ?> derniers</div>
+          <div class="ud-admin-panel__title">Activité récente</div>
+          <div class="ud-admin-panel__meta"><?= count($timeline) ?> éléments</div>
         </div>
-        <div class="table-responsive">
-          <table class="table ud-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Téléphone</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($latestContacts)): ?>
-                <tr><td colspan="4" class="text-muted">Aucun message.</td></tr>
-              <?php else: ?>
-                <?php foreach ($latestContacts as $c): ?>
-                  <tr>
-                    <td class="text-nowrap"><?= h(date('d/m/Y H:i', strtotime((string)$c['created_at']))) ?></td>
-                    <td><?= h(($c['first_name'] ?? '') . ' ' . ($c['last_name'] ?? '')) ?></td>
-                    <td class="text-nowrap"><?= h((string)($c['email'] ?? '')) ?></td>
-                    <td class="text-nowrap"><?= h((string)($c['phone'] ?? '')) ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
+        <div class="ud-admin-timeline p-3">
+          <?php if (empty($timeline)): ?>
+            <div class="text-muted">Aucune activité pour le moment.</div>
+          <?php else: ?>
+            <?php foreach ($timeline as $t): ?>
+              <?php
+                $isContact = $t['type'] === 'contact';
+                $badgeCls = $isContact ? 'ud-admin-badge ud-admin-badge--contact' : 'ud-admin-badge ud-admin-badge--appointment';
+                $label = $isContact ? 'Contact' : 'Rendez‑vous';
+                $tsRaw = (string)($t['ts'] ?? '');
+                $tsFmt = $tsRaw !== '' ? date('d/m/Y H:i', strtotime($tsRaw)) : '';
+              ?>
+              <div class="ud-admin-timeline__item">
+                <div class="ud-admin-timeline__dot"></div>
+                <div class="ud-admin-timeline__body">
+                  <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div>
+                      <span class="<?= $badgeCls ?>"><?= h($label) ?></span>
+                      <div class="ud-admin-timeline__title mt-2"><?= h($t['title'] ?? '') ?></div>
+                      <div class="ud-admin-timeline__sub"><?= h($t['subtitle'] ?? '') ?></div>
+                    </div>
+                    <div class="text-nowrap ud-admin-timeline__time"><?= h($tsFmt) ?></div>
+                  </div>
+                  <?php if (!empty($t['meta'])): ?>
+                    <div class="ud-admin-timeline__meta"><?= h($t['meta']) ?></div>
+                  <?php endif; ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-5">
       <div class="ud-admin-panel">
         <div class="ud-admin-panel__head">
-          <div class="ud-admin-panel__title">Derniers rendez‑vous</div>
-          <div class="ud-admin-panel__meta"><?= count($latestAppointments) ?> derniers</div>
+          <div class="ud-admin-panel__title">Détails</div>
+          <div class="ud-admin-panel__meta">Tables</div>
         </div>
-        <div class="table-responsive">
-          <table class="table ud-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Date RDV</th>
-                <th>Bureau</th>
-                <th>Nom</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($latestAppointments)): ?>
-                <tr><td colspan="3" class="text-muted">Aucun rendez‑vous.</td></tr>
-              <?php else: ?>
-                <?php foreach ($latestAppointments as $a): ?>
-                  <tr>
-                    <td class="text-nowrap"><?= h(date('d/m/Y H:i', strtotime((string)$a['appointment_at']))) ?></td>
-                    <td><?= h((string)($a['office'] ?? '')) ?></td>
-                    <td><?= h((string)($a['name'] ?? '')) ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
+
+        <div class="accordion ud-admin-accordion" id="udAdminAccordion">
+          <div class="accordion-item ud-admin-accordion__item">
+            <h2 class="accordion-header" id="udAdminAcc1">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#udAdminCol1" aria-expanded="true" aria-controls="udAdminCol1">
+                Derniers messages (Contact)
+              </button>
+            </h2>
+            <div id="udAdminCol1" class="accordion-collapse collapse show" aria-labelledby="udAdminAcc1" data-bs-parent="#udAdminAccordion">
+              <div class="accordion-body">
+                <div class="table-responsive">
+                  <table class="table ud-admin-table mb-0">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php if (empty($latestContacts)): ?>
+                        <tr><td colspan="3" class="text-muted">Aucun message.</td></tr>
+                      <?php else: ?>
+                        <?php foreach ($latestContacts as $c): ?>
+                          <tr>
+                            <td class="text-nowrap"><?= h(date('d/m/Y H:i', strtotime((string)$c['created_at']))) ?></td>
+                            <td><?= h(($c['first_name'] ?? '') . ' ' . ($c['last_name'] ?? '')) ?></td>
+                            <td class="text-nowrap"><?= h((string)($c['email'] ?? '')) ?></td>
+                          </tr>
+                        <?php endforeach; ?>
+                      <?php endif; ?>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item ud-admin-accordion__item">
+            <h2 class="accordion-header" id="udAdminAcc2">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#udAdminCol2" aria-expanded="false" aria-controls="udAdminCol2">
+                Derniers rendez‑vous
+              </button>
+            </h2>
+            <div id="udAdminCol2" class="accordion-collapse collapse" aria-labelledby="udAdminAcc2" data-bs-parent="#udAdminAccordion">
+              <div class="accordion-body">
+                <div class="table-responsive">
+                  <table class="table ud-admin-table mb-0">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Bureau</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                <?php if (empty($latestAppointments)): ?>
+                        <tr><td colspan="6" class="text-muted">Aucun rendez‑vous.</td></tr>
+                      <?php else: ?>
+                        <?php foreach ($latestAppointments as $a): ?>
+                          <tr>
+                            <td class="text-nowrap"><?= h(date('d/m/Y H:i', strtotime((string)$a['appointment_at']))) ?></td>
+                            <td><?= h((string)($a['office'] ?? '')) ?></td>
+                            <td><?= h((string)($a['name'] ?? '')) ?></td>
+                            <td class="text-nowrap"><?= h((string)($a['email'] ?? '')) ?></td>
+                            <td class="text-nowrap"><?= h((string)($a['phone'] ?? '')) ?></td>
+                            <td>
+                              <?php
+                                $st = (string)($a['status'] ?? 'pending');
+                              ?>
+                              <span class="ud-admin-status ud-admin-status--<?= h($st) ?>">
+                                <?= $st === 'confirmed' ? 'Confirmé' : ($st === 'cancelled' ? 'Annulé' : 'En attente') ?>
+                              </span>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                      <?php endif; ?>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>

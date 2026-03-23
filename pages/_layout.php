@@ -30,6 +30,9 @@ function isExternal(string $href): bool
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= h($title) ?></title>
+  <meta name="description" content="Univers Diaspora offre des conseils, un accompagnement et des services pour la diaspora en France et à l'international.">
+  <meta property="og:title" content="<?= h($title) ?>">
+  <meta property="og:description" content="Univers Diaspora offre des conseils, un accompagnement et des services pour la diaspora en France et à l'international.">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,6 +90,10 @@ function isExternal(string $href): bool
           </li>
 
           <li class="nav-item">
+            <a class="nav-link ud-navlink<?= $active === 'apropos' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
+          </li>
+
+          <li class="nav-item">
             <a class="nav-link ud-navlink" href="<?= h($baseUrl) ?>/?page=rendez-vous">Rendez-vous</a>
           </li>
 
@@ -114,6 +121,7 @@ function isExternal(string $href): bool
         <a class="btn btn-primary w-100 ud-nav-cta" href="<?= h($baseUrl) ?>/#contact" data-bs-dismiss="offcanvas">Contact</a>
         <a class="btn btn-outline-primary w-100 ud-nav-cta ud-nav-cta--ghost mt-2" href="<?= h($baseUrl) ?>/#services" data-bs-dismiss="offcanvas">Découvrir nos services</a>
         <a class="btn btn-outline-primary w-100 ud-nav-cta ud-nav-cta--ghost mt-2" href="<?= h($baseUrl) ?>/?page=rendez-vous" data-bs-dismiss="offcanvas">Rendez-vous</a>
+        <a class="btn btn-outline-primary w-100 ud-nav-cta ud-nav-cta--ghost mt-2" href="<?= h($baseUrl) ?>/?page=apropos" data-bs-dismiss="offcanvas">À propos</a>
       </div>
 
       <div class="list-group list-group-flush ud-mobile-list">

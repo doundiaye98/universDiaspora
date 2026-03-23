@@ -5,6 +5,7 @@ require __DIR__ . '/app/http.php';
 require __DIR__ . '/app/db.php';
 require __DIR__ . '/app/admin.php';
 require __DIR__ . '/app/services.php';
+require __DIR__ . '/app/mailer.php';
 
 session_start();
 
@@ -57,6 +58,27 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
             ':ua' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
         ]);
 
+        // Optional notification email to admins.
+        try {
+            $config = require __DIR__ . '/config/config.php';
+            $mailTo = (string)($config['mail']['to'] ?? '');
+            if ($mailTo !== '') {
+                $office = (string)$old['office'];
+                $subject = '[RDV] Nouveau rendez-vous - ' . $office;
+                $body =
+                    "Nouveau rendez-vous reçu.\n\n" .
+                    'Bureau: ' . $office . "\n" .
+                    'Date/heure: ' . ($dt ? $dt->format('Y-m-d H:i') : '') . "\n\n" .
+                    'Nom: ' . (string)$old['name'] . "\n" .
+                    'Email: ' . (string)$old['email'] . "\n" .
+                    'Téléphone: ' . (string)$old['phone'] . "\n\n" .
+                    'Message: ' . (string)$old['message'] . "\n";
+                ud_mail_try_send($mailTo, $subject, $body);
+            }
+        } catch (Throwable $e) {
+            // Email is optional; DB success must still redirect.
+        }
+
         $_SESSION['flash'] = ['success' => 'Rendez-vous envoyé avec succès. Merci !'];
         redirect('./?page=rendez-vous');
     } catch (Throwable $e) {
@@ -103,6 +125,49 @@ if (($_GET['action'] ?? '') === 'admin-logout') {
     admin_logout();
     $_SESSION['flash'] = ['success' => 'Déconnecté.'];
     redirect($baseUrl . '/');
+}
+
+// Admin: Confirm / cancel appointments
+if (($_GET['action'] ?? '') === 'admin-appointment-status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+
+    $id = (int) post('id');
+    $status = post('status');
+
+    $allowed = ['pending', 'confirmed', 'cancelled'];
+    if ($id <= 0 || !in_array($status, $allowed, true)) {
+        $_SESSION['flash'] = ['error' => 'Requête invalide.'];
+        redirect('./?page=admin-messages');
+    }
+
+    try {
+        $pdo = db();
+        $confirmedAt = $status === 'confirmed' ? date('Y-m-d H:i:s') : null;
+        $confirmedBy = $status === 'confirmed' ? ($_SESSION['admin']['username'] ?? null) : null;
+
+        $stmt = $pdo->prepare(
+            'UPDATE appointments
+             SET status = :s,
+                 confirmed_at = :ca,
+                 confirmed_by = :cb
+             WHERE id = :id'
+        );
+        $stmt->execute([
+            ':s' => $status,
+            ':ca' => $confirmedAt,
+            ':cb' => $confirmedBy,
+            ':id' => $id,
+        ]);
+
+        $_SESSION['flash'] = ['success' => 'Statut du rendez-vous mis à jour.'];
+        redirect('./?page=admin-messages');
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['error' => 'Impossible de mettre à jour le statut.'];
+        redirect('./?page=admin-messages');
+    }
 }
 
 // Admin: Services CRUD
@@ -249,6 +314,25 @@ if (($_GET['action'] ?? '') === 'contact' && $_SERVER['REQUEST_METHOD'] === 'POS
             ':ua' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
         ]);
 
+        // Optional notification email to admins.
+        try {
+            $config = require __DIR__ . '/config/config.php';
+            $mailTo = (string)($config['mail']['to'] ?? '');
+            if ($mailTo !== '') {
+                $fullName = trim((string)($old['first_name'] ?? '') . ' ' . (string)($old['last_name'] ?? ''));
+                $subject = '[Contact] Nouveau message - ' . $fullName;
+                $body =
+                    "Nouveau message reçu.\n\n" .
+                    'Nom: ' . $fullName . "\n" .
+                    'Email: ' . (string)$old['email'] . "\n" .
+                    'Téléphone: ' . (string)$old['phone'] . "\n\n" .
+                    'Message: ' . (string)$old['message'] . "\n";
+                ud_mail_try_send($mailTo, $subject, $body);
+            }
+        } catch (Throwable $e) {
+            // Email is optional; DB success must still redirect.
+        }
+
         $_SESSION['flash'] = ['success' => 'Message envoyé. Merci !'];
         redirect('./#contact');
     } catch (Throwable $e) {
@@ -267,10 +351,12 @@ if ($page === '' || $page === 'home') {
 $specialPages = [
     'demarrer-maintenant' => __DIR__ . '/pages/start.php',
     'rendez-vous' => __DIR__ . '/pages/appointment.php',
+    'apropos' => __DIR__ . '/pages/apropos.php',
     'admin-login' => __DIR__ . '/pages/admin/login.php',
     'admin' => __DIR__ . '/pages/admin/dashboard.php',
     'admin-services' => __DIR__ . '/pages/admin/services.php',
     'admin-admins' => __DIR__ . '/pages/admin/admins.php',
+    'admin-messages' => __DIR__ . '/pages/admin/messages.php',
 ];
 if (isset($specialPages[$page])) {
     require $specialPages[$page];
