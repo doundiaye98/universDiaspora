@@ -36,20 +36,20 @@ $csrf = admin_csrf_token();
 
 ob_start();
 ?>
-<div class="container py-4">
-  <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
-    <div>
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+  <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-end justify-content-between gap-3 mb-3">
+    <div class="min-w-0">
       <div class="ud-admin-kicker">Gestion</div>
       <h1 class="ud-admin-title mb-0">Services</h1>
       <div class="ud-admin-sub">Ajouter, modifier, supprimer les services affichés sur le site.</div>
     </div>
-    <a class="btn btn-primary ud-btn ud-btn--shine" href="<?= h($baseUrl) ?>/?page=admin-services&edit=new">
+    <a class="btn btn-primary ud-btn ud-btn--shine flex-shrink-0 align-self-md-center" href="<?= h($baseUrl) ?>/?page=admin-services&edit=new">
       + Nouveau service
     </a>
   </div>
 
-  <div class="row g-4">
-    <div class="col-12 col-lg-6">
+  <div class="row g-3 g-lg-4">
+    <div class="col-12 col-xl-6">
       <div class="ud-admin-panel">
         <div class="ud-admin-panel__head">
           <div class="ud-admin-panel__title">Liste</div>
@@ -86,7 +86,7 @@ ob_start();
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-xl-6">
       <?php
         $isNew = (($_GET['edit'] ?? '') === 'new');
         $form = $edit ?? [
@@ -95,6 +95,13 @@ ob_start();
             'title' => '',
             'description' => '',
             'details' => '',
+            'details_is_html' => false,
+            'step1_title' => '',
+            'step1_text' => '',
+            'step2_title' => '',
+            'step2_text' => '',
+            'step3_title' => '',
+            'step3_text' => '',
             'icon' => '',
             'external_url' => '',
             'coming_soon' => false,
@@ -109,6 +116,13 @@ ob_start();
             $form['title'] = (string)($old['title'] ?? '');
             $form['description'] = (string)($old['description'] ?? '');
             $form['details'] = (string)($old['details'] ?? '');
+            $form['details_is_html'] = (($old['details_is_html'] ?? '') === '1');
+            $form['step1_title'] = (string)($old['step1_title'] ?? '');
+            $form['step1_text'] = (string)($old['step1_text'] ?? '');
+            $form['step2_title'] = (string)($old['step2_title'] ?? '');
+            $form['step2_text'] = (string)($old['step2_text'] ?? '');
+            $form['step3_title'] = (string)($old['step3_title'] ?? '');
+            $form['step3_text'] = (string)($old['step3_text'] ?? '');
             $form['icon'] = (string)($old['icon'] ?? '');
             $form['external_url'] = (string)($old['external_url'] ?? '');
             $form['sort_order'] = (int)($old['sort_order'] ?? 0);
@@ -146,9 +160,32 @@ ob_start();
               </div>
 
               <div class="col-12">
-                <label class="form-label">Détails (texte)</label>
-                <textarea class="form-control" name="details" rows="5"><?= h((string)($form['details'] ?? '')) ?></textarea>
-                <div class="small text-muted mt-1">Affiché sur la page du service.</div>
+                <label class="form-label">Détails</label>
+                <textarea class="form-control font-monospace small" name="details" rows="8"><?= h((string)($form['details'] ?? '')) ?></textarea>
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" value="1" id="udDetailsHtml" name="details_is_html" <?= !empty($form['details_is_html']) ? 'checked' : '' ?>>
+                  <label class="form-check-label" for="udDetailsHtml">Interpréter comme HTML limité</label>
+                </div>
+                <div class="small text-muted mt-1">Texte simple : retours à la ligne conservés. HTML : balises autorisées &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;h2&gt; à &lt;h4&gt;.</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Étapes « Comment ça se passe » (3 étapes)</label>
+                <div class="small text-muted mb-2">Laissez vide pour utiliser les textes par défaut (vouvoiement).</div>
+                <div class="row g-2">
+                  <div class="col-12 col-md-4">
+                    <input class="form-control form-control-sm" name="step1_title" value="<?= h((string)($form['step1_title'] ?? '')) ?>" placeholder="Titre étape 1">
+                    <textarea class="form-control form-control-sm mt-1" name="step1_text" rows="3" placeholder="Texte étape 1"><?= h((string)($form['step1_text'] ?? '')) ?></textarea>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <input class="form-control form-control-sm" name="step2_title" value="<?= h((string)($form['step2_title'] ?? '')) ?>" placeholder="Titre étape 2">
+                    <textarea class="form-control form-control-sm mt-1" name="step2_text" rows="3" placeholder="Texte étape 2"><?= h((string)($form['step2_text'] ?? '')) ?></textarea>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <input class="form-control form-control-sm" name="step3_title" value="<?= h((string)($form['step3_title'] ?? '')) ?>" placeholder="Titre étape 3">
+                    <textarea class="form-control form-control-sm mt-1" name="step3_text" rows="3" placeholder="Texte étape 3"><?= h((string)($form['step3_text'] ?? '')) ?></textarea>
+                  </div>
+                </div>
               </div>
 
               <div class="col-12 col-md-6">

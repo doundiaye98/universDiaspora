@@ -27,7 +27,12 @@ if ($service === null) {
     </div>
     <?php
     $content = ob_get_clean();
-    $view = ['title' => $title, 'content' => $content, 'active' => ''];
+    $view = [
+        'title' => $title . ' — Univers Diaspora',
+        'meta_description' => 'Page introuvable — Univers Diaspora.',
+        'content' => $content,
+        'active' => '',
+    ];
     require __DIR__ . '/_layout.php';
     exit;
 }
@@ -35,6 +40,8 @@ if ($service === null) {
 $title = $service['title'] ?? 'Service';
 $currentSlug = (string)($service['slug'] ?? '');
 $description = (string)($service['description'] ?? 'Un accompagnement clair, rapide et sur‑mesure.');
+$serviceSteps = service_steps_for_display($service);
+$iconSrc = service_icon_url((string)($service['icon'] ?? ''), $baseUrl);
 
 $otherServices = array_values(array_filter($services, static function (array $s) use ($currentSlug): bool {
     return ($s['slug'] ?? '') !== $currentSlug;
@@ -53,7 +60,7 @@ ob_start();
     <div class="ud-service-hero__grid">
       <div class="ud-service-hero__left">
         <div class="ud-service-hero__badge">
-          <img src="<?= h($baseUrl) ?>/public/assets/img/<?= h($service['icon']) ?>" alt="<?= h($title) ?>" width="64" height="64">
+          <img src="<?= h($iconSrc) ?>" alt="<?= h($title) ?>" width="64" height="64">
         </div>
         <div>
           <h1 class="ud-service-hero__title mb-2"><?= h($title) ?></h1>
@@ -86,49 +93,47 @@ ob_start();
         <div class="ud-surface">
           <h2 class="h5 mb-3">Comment ça se passe</h2>
           <div class="ud-steps">
-            <div class="ud-step">
-              <div class="ud-step__num">1</div>
-              <div>
-                <div class="ud-step__title">Analyse</div>
-                <div class="ud-step__text">On comprend ton besoin et on te conseille la meilleure option.</div>
+            <?php foreach ($serviceSteps as $idx => $st): ?>
+              <div class="ud-step">
+                <div class="ud-step__num"><?= (int)($idx + 1) ?></div>
+                <div>
+                  <div class="ud-step__title"><?= h((string)($st['title'] ?? '')) ?></div>
+                  <div class="ud-step__text"><?= h((string)($st['text'] ?? '')) ?></div>
+                </div>
               </div>
-            </div>
-            <div class="ud-step">
-              <div class="ud-step__num">2</div>
-              <div>
-                <div class="ud-step__title">Proposition</div>
-                <div class="ud-step__text">On te présente une solution claire, avec un plan d’action.</div>
-              </div>
-            </div>
-            <div class="ud-step">
-              <div class="ud-step__num">3</div>
-              <div>
-                <div class="ud-step__title">Accompagnement</div>
-                <div class="ud-step__text">On avance avec toi jusqu’à la réalisation.</div>
-              </div>
-            </div>
+            <?php endforeach; ?>
           </div>
         </div>
       </div>
 
       <div class="col-12 col-lg-5">
         <div class="ud-surface ud-cta-box">
-          <div class="ud-cta-box__title">Parlons de ton projet</div>
-          <div class="ud-cta-box__text">Réponse rapide. Tu peux détailler ton besoin via le formulaire.</div>
+          <div class="ud-cta-box__title">Parlons de votre projet</div>
+          <div class="ud-cta-box__text">Réponse rapide. Vous pouvez détailler votre besoin via le formulaire.</div>
           <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine mt-3" href="<?= h($baseUrl) ?>/#contact">
             Contacter Univers Diaspora <span class="ud-arrow" aria-hidden="true">→</span>
           </a>
-          <div class="ud-cta-box__hint mt-2">Tu seras redirigé vers le formulaire de contact de l’accueil.</div>
+          <div class="ud-cta-box__hint mt-2">Vous serez redirigé vers le formulaire de contact de l’accueil.</div>
         </div>
       </div>
     </div>
 
-    <?php if (!empty(trim((string)($service['details'] ?? '')))): ?>
+    <?php
+    $detailsRaw = trim((string)($service['details'] ?? ''));
+    if ($detailsRaw !== ''):
+        $detailsHtml = !empty($service['details_is_html']);
+        ?>
       <div class="mt-4 ud-surface">
         <h2 class="h5 mb-3">Détails</h2>
-        <div class="ud-about-p">
-          <?= nl2br(h((string)$service['details'])) ?>
-        </div>
+        <?php if ($detailsHtml): ?>
+          <div class="ud-about-p ud-about-p--html">
+            <?= services_sanitize_details_html($detailsRaw) ?>
+          </div>
+        <?php else: ?>
+          <div class="ud-about-p">
+            <?= nl2br(h($detailsRaw)) ?>
+          </div>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
 
@@ -146,7 +151,7 @@ ob_start();
           <?php $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug'])); ?>
           <div class="col-12 col-sm-6 col-lg-4">
             <a class="ud-related-card" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-              <img src="<?= h($baseUrl) ?>/public/assets/img/<?= h($s['icon']) ?>" alt="" width="40" height="40">
+              <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl)) ?>" alt="" width="40" height="40">
               <div class="ud-related-card__text">
                 <div class="ud-related-card__title"><?= h($s['title']) ?></div>
                 <div class="ud-related-card__meta">Découvrir</div>
@@ -163,7 +168,10 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => $title,
+    'title' => $title . ' — Univers Diaspora',
+    'meta_description' => function_exists('mb_substr')
+        ? mb_substr(trim($description), 0, 160)
+        : substr(trim($description), 0, 160),
     'active' => $service['slug'] ?? '',
     'content' => $content,
 ];

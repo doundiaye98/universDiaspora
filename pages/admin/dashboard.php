@@ -13,6 +13,8 @@ $counts = [
     'appointments' => (int) $pdo->query('SELECT COUNT(*) FROM appointments')->fetchColumn(),
     'services' => (int) $pdo->query('SELECT COUNT(*) FROM services')->fetchColumn(),
     'admins' => (int) $pdo->query('SELECT COUNT(*) FROM admin_users')->fetchColumn(),
+    'job_applications' => (int) $pdo->query('SELECT COUNT(*) FROM job_applications')->fetchColumn(),
+    'team_members' => (int) $pdo->query('SELECT COUNT(*) FROM team_members')->fetchColumn(),
 ];
 
 $latestContacts = $pdo->query('SELECT id, last_name, first_name, email, phone, created_at FROM contact_messages ORDER BY id DESC LIMIT 8')->fetchAll();
@@ -52,7 +54,7 @@ $timeline = array_slice($timeline, 0, 10);
 
 ob_start();
 ?>
-<div class="container py-4 ud-admin-dashboard">
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4 ud-admin-dashboard">
   <div class="ud-admin-hero mb-4">
     <div class="ud-admin-hero__content">
       <div class="ud-admin-kicker">Dashboard</div>
@@ -61,9 +63,10 @@ ob_start();
         Vue rapide sur vos demandes et pages à gérer. Tout est prêt pour être mis à jour depuis l’admin.
       </p>
     </div>
-    <div class="ud-admin-hero__actions">
-      <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=admin-services">Gérer services</a>
-      <a class="btn btn-primary ud-btn ud-btn--shine" href="<?= h($baseUrl) ?>/?page=admin-admins">Gérer admins</a>
+    <div class="ud-admin-hero__actions flex-column flex-sm-row">
+      <a class="btn btn-outline-primary ud-btn ud-btn--ghost w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-services">Gérer services</a>
+      <a class="btn btn-outline-primary ud-btn ud-btn--ghost w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-team-members">Gérer l’équipe</a>
+      <a class="btn btn-primary ud-btn ud-btn--shine w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-admins">Gérer admins</a>
     </div>
   </div>
 
@@ -73,6 +76,13 @@ ob_start();
         <div class="ud-admin-metric__label">Services</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['services'] ?></div>
         <div class="ud-admin-metric__hint">Actifs dans le site</div>
+      </a>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-team-members">
+        <div class="ud-admin-metric__label">Équipe</div>
+        <div class="ud-admin-metric__value"><?= (int) $counts['team_members'] ?></div>
+        <div class="ud-admin-metric__hint">Membres sur la page « Notre équipe »</div>
       </a>
     </div>
     <div class="col-12 col-md-6 col-xl-3">
@@ -90,6 +100,13 @@ ob_start();
       </div>
     </div>
     <div class="col-12 col-md-6 col-xl-3">
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-job-applications">
+        <div class="ud-admin-metric__label">Candidatures</div>
+        <div class="ud-admin-metric__value"><?= (int) $counts['job_applications'] ?></div>
+        <div class="ud-admin-metric__hint">CV &amp; lettres (PDF)</div>
+      </a>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
       <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-admins">
         <div class="ud-admin-metric__label">Administrateurs</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['admins'] ?></div>
@@ -98,8 +115,8 @@ ob_start();
     </div>
   </div>
 
-  <div class="row g-4 align-items-start">
-    <div class="col-12 col-lg-7">
+  <div class="row g-3 g-lg-4 align-items-start">
+    <div class="col-12 col-xl-7">
       <div class="ud-admin-panel ud-admin-panel--hero">
         <div class="ud-admin-panel__head">
           <div class="ud-admin-panel__title">Activité récente</div>
@@ -120,13 +137,13 @@ ob_start();
               <div class="ud-admin-timeline__item">
                 <div class="ud-admin-timeline__dot"></div>
                 <div class="ud-admin-timeline__body">
-                  <div class="d-flex align-items-start justify-content-between gap-2">
-                    <div>
+                  <div class="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2">
+                    <div class="min-w-0">
                       <span class="<?= $badgeCls ?>"><?= h($label) ?></span>
                       <div class="ud-admin-timeline__title mt-2"><?= h($t['title'] ?? '') ?></div>
                       <div class="ud-admin-timeline__sub"><?= h($t['subtitle'] ?? '') ?></div>
                     </div>
-                    <div class="text-nowrap ud-admin-timeline__time"><?= h($tsFmt) ?></div>
+                    <div class="text-nowrap ud-admin-timeline__time flex-shrink-0 ms-sm-auto"><?= h($tsFmt) ?></div>
                   </div>
                   <?php if (!empty($t['meta'])): ?>
                     <div class="ud-admin-timeline__meta"><?= h($t['meta']) ?></div>
@@ -139,7 +156,7 @@ ob_start();
       </div>
     </div>
 
-    <div class="col-12 col-lg-5">
+    <div class="col-12 col-xl-5">
       <div class="ud-admin-panel">
         <div class="ud-admin-panel__head">
           <div class="ud-admin-panel__title">Détails</div>

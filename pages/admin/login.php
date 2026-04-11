@@ -10,7 +10,7 @@ $errors = $errors ?? [];
 ob_start();
 ?>
 <section class="ud-admin-wrap py-5">
-  <div class="container">
+  <div class="container px-3 px-sm-4">
     <div class="row justify-content-center">
       <div class="col-12 col-md-8 col-lg-5">
         <div class="ud-admin-card">
@@ -22,7 +22,7 @@ ob_start();
             </div>
           </div>
 
-          <form class="mt-4" method="post" action="<?= h($baseUrl) ?>/?action=admin-login">
+          <form class="mt-4" method="post" action="?action=admin-login">
             <div class="mb-3">
               <label class="form-label">Utilisateur</label>
               <input class="form-control <?= isset($errors['username']) ? 'is-invalid' : '' ?>" name="username" value="<?= h($old['username'] ?? '') ?>" autocomplete="username" required>

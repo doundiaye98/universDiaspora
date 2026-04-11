@@ -89,6 +89,13 @@ function ensureContactSchema(PDO $pdo): void
           `title` VARCHAR(190) NOT NULL,
           `description` VARCHAR(255) NULL,
           `details` TEXT NULL,
+          `details_is_html` TINYINT(1) NOT NULL DEFAULT 0,
+          `step1_title` VARCHAR(120) NULL,
+          `step1_text` TEXT NULL,
+          `step2_title` VARCHAR(120) NULL,
+          `step2_text` TEXT NULL,
+          `step3_title` VARCHAR(120) NULL,
+          `step3_text` TEXT NULL,
           `icon` VARCHAR(190) NULL,
           `external_url` VARCHAR(255) NULL,
           `coming_soon` TINYINT(1) NOT NULL DEFAULT 0,
@@ -99,6 +106,24 @@ function ensureContactSchema(PDO $pdo): void
           KEY `idx_sort_order` (`sort_order`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
+
+    $serviceCols = [
+        'details_is_html' => 'TINYINT(1) NOT NULL DEFAULT 0',
+        'step1_title' => 'VARCHAR(120) NULL',
+        'step1_text' => 'TEXT NULL',
+        'step2_title' => 'VARCHAR(120) NULL',
+        'step2_text' => 'TEXT NULL',
+        'step3_title' => 'VARCHAR(120) NULL',
+        'step3_text' => 'TEXT NULL',
+    ];
+    foreach ($serviceCols as $colName => $colDef) {
+        $has = (int) $pdo->query(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'services' AND COLUMN_NAME = " . $pdo->quote($colName)
+        )->fetchColumn();
+        if ($has === 0) {
+            $pdo->exec('ALTER TABLE `services` ADD COLUMN `' . str_replace('`', '``', $colName) . '` ' . $colDef);
+        }
+    }
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS `service_bullets` (
@@ -112,14 +137,67 @@ function ensureContactSchema(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
 
-    // Seed initial admin user if missing (credentials from config).
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `announcements` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `category` ENUM(\'offre\',\'recrutement\') NOT NULL DEFAULT \'offre\',
+          `title` VARCHAR(190) NOT NULL,
+          `summary` VARCHAR(255) NULL,
+          `content` TEXT NULL,
+          `sort_order` INT NOT NULL DEFAULT 0,
+          `is_published` TINYINT(1) NOT NULL DEFAULT 1,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_category_sort` (`category`, `sort_order`),
+          KEY `idx_ann_published` (`is_published`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `job_applications` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `announcement_id` BIGINT UNSIGNED NULL,
+          `full_name` VARCHAR(200) NOT NULL,
+          `email` VARCHAR(190) NOT NULL,
+          `phone` VARCHAR(50) NULL,
+          `message` TEXT NULL,
+          `cv_path` VARCHAR(500) NOT NULL,
+          `cover_path` VARCHAR(500) NOT NULL,
+          `ip` VARCHAR(45) NULL,
+          `user_agent` VARCHAR(255) NULL,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_job_ann` (`announcement_id`),
+          KEY `idx_job_created` (`created_at`),
+          CONSTRAINT `fk_job_announcement` FOREIGN KEY (`announcement_id`) REFERENCES `announcements` (`id`) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `team_members` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `name` VARCHAR(200) NOT NULL,
+          `role` VARCHAR(255) NULL,
+          `bio` TEXT NULL,
+          `photo` VARCHAR(255) NULL,
+          `sort_order` INT NOT NULL DEFAULT 0,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_team_sort` (`sort_order`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+
+    // Seed initial admin user if missing (credentials from config) — jamais avec mot de passe par défaut faible.
     $config = require __DIR__ . '/../config/config.php';
-    $adminUser = (string)($config['admin']['username'] ?? 'admin');
-    $adminPass = (string)($config['admin']['password'] ?? 'admin123');
+    $adminUser = trim((string)($config['admin']['username'] ?? 'admin'));
+    $adminPass = (string)($config['admin']['password'] ?? '');
+    $weak = ($adminPass === '' || strcasecmp($adminPass, 'CHANGEME') === 0 || strlen($adminPass) < 8);
     $stmt = $pdo->prepare('SELECT id FROM admin_users WHERE username = :u LIMIT 1');
-    $stmt->execute([':u' => $adminUser]);
+    $stmt->execute([':u' => $adminUser !== '' ? $adminUser : 'admin']);
     $existing = $stmt->fetchColumn();
-    if (!$existing) {
+    if (!$existing && $adminUser !== '' && !$weak) {
         $hash = password_hash($adminPass, PASSWORD_DEFAULT);
         $ins = $pdo->prepare('INSERT INTO admin_users (username, password_hash, is_active) VALUES (:u, :h, 1)');
         $ins->execute([':u' => $adminUser, ':h' => $hash]);
@@ -160,6 +238,9 @@ function ensureContactSchema(PDO $pdo): void
             }
         }
     }
+
+    require_once __DIR__ . '/team_members.php';
+    team_members_seed_from_data_file($pdo);
 }
 
 function db(): PDO

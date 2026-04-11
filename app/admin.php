@@ -13,22 +13,28 @@ function admin_require_login(string $baseUrl): void
     }
 }
 
-function admin_login(PDO $pdo, string $username, string $password): bool
+/**
+ * @return int 0 = succès, 1 = identifiants incorrects, 2 = compte désactivé
+ */
+function admin_login(PDO $pdo, string $username, string $password): int
 {
     $stmt = $pdo->prepare('SELECT id, username, password_hash, is_active FROM admin_users WHERE username = :u LIMIT 1');
     $stmt->execute([':u' => $username]);
     $row = $stmt->fetch();
-    if (!is_array($row) || empty($row['is_active'])) {
-        return false;
+    if (!is_array($row)) {
+        return 1;
+    }
+    if (empty($row['is_active'])) {
+        return 2;
     }
     if (!password_verify($password, (string)$row['password_hash'])) {
-        return false;
+        return 1;
     }
     $_SESSION['admin'] = [
         'id' => (int)$row['id'],
         'username' => (string)$row['username'],
     ];
-    return true;
+    return 0;
 }
 
 function admin_logout(): void

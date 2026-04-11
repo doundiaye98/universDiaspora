@@ -214,7 +214,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'Démarrer maintenant',
+    'title' => 'Démarrer maintenant — Univers Diaspora',
+    'meta_description' => 'Démarrez votre projet avec Univers Diaspora : choisissez un service, préparez votre message et contactez-nous.',
     'active' => '',
     'content' => $content,
 ];

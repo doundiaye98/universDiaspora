@@ -5,6 +5,57 @@ declare(strict_types=1);
  * Service repository (DB-first). Falls back to data/services.php if DB unavailable.
  */
 
+function services_default_steps_vous(): array
+{
+    return [
+        ['title' => 'Analyse', 'text' => 'Nous comprenons votre besoin et vous conseillons la meilleure option.'],
+        ['title' => 'Proposition', 'text' => 'Nous vous présentons une solution claire, avec un plan d’action.'],
+        ['title' => 'Accompagnement', 'text' => 'Nous avançons avec vous jusqu’à la réalisation.'],
+    ];
+}
+
+/**
+ * Étapes affichées sur la page service (titres / textes éditables ; valeurs vides = défaut « vous »).
+ *
+ * @return list<array{title:string,text:string}>
+ */
+function service_steps_for_display(array $service): array
+{
+    $defaults = services_default_steps_vous();
+    $out = [];
+    for ($i = 0; $i < 3; $i++) {
+        $n = $i + 1;
+        $t = trim((string)($service['step' . $n . '_title'] ?? ''));
+        $x = trim((string)($service['step' . $n . '_text'] ?? ''));
+        if ($t === '') {
+            $t = $defaults[$i]['title'];
+        }
+        if ($x === '') {
+            $x = $defaults[$i]['text'];
+        }
+        $out[] = ['title' => $t, 'text' => $x];
+    }
+    return $out;
+}
+
+function services_sanitize_details_html(string $html): string
+{
+    $allowed = '<p><br><strong><b><em><i><ul><ol><li><h2><h3><h4>';
+    return strip_tags($html, $allowed);
+}
+
+/** URL publique de l’icône, ou image SVG inline si le fichier est absent. */
+function service_icon_url(string $iconFilename, string $baseUrl): string
+{
+    $base = basename(trim($iconFilename));
+    $root = dirname(__DIR__);
+    if ($base !== '' && is_file($root . '/public/assets/img/' . $base)) {
+        return rtrim($baseUrl, '/') . '/public/assets/img/' . rawurlencode($base);
+    }
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect fill="#e8ecf4" width="64" height="64" rx="14"/><path fill="rgba(11,42,111,.35)" d="M32 20c-4.5 0-8 3.5-8 8 0 5 3 9 8 14 5-5 8-9 8-14 0-4.5-3.5-8-8-8zm0 24c-8 0-15 4-15 8v4h30v-4c0-4-7-8-15-8z"/></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
+}
+
 function services_all(PDO $pdo = null): array
 {
     try {
@@ -23,6 +74,13 @@ function services_all(PDO $pdo = null): array
                 'title' => (string)$r['title'],
                 'description' => (string)($r['description'] ?? ''),
                 'details' => (string)($r['details'] ?? ''),
+                'details_is_html' => !empty($r['details_is_html']),
+                'step1_title' => (string)($r['step1_title'] ?? ''),
+                'step1_text' => (string)($r['step1_text'] ?? ''),
+                'step2_title' => (string)($r['step2_title'] ?? ''),
+                'step2_text' => (string)($r['step2_text'] ?? ''),
+                'step3_title' => (string)($r['step3_title'] ?? ''),
+                'step3_text' => (string)($r['step3_text'] ?? ''),
                 'icon' => (string)($r['icon'] ?? ''),
                 'external_url' => $r['external_url'] ? (string)$r['external_url'] : null,
                 'coming_soon' => !empty($r['coming_soon']),
@@ -54,6 +112,13 @@ function services_find_by_slug(string $slug, PDO $pdo = null): ?array
             'title' => (string)$r['title'],
             'description' => (string)($r['description'] ?? ''),
             'details' => (string)($r['details'] ?? ''),
+            'details_is_html' => !empty($r['details_is_html']),
+            'step1_title' => (string)($r['step1_title'] ?? ''),
+            'step1_text' => (string)($r['step1_text'] ?? ''),
+            'step2_title' => (string)($r['step2_title'] ?? ''),
+            'step2_text' => (string)($r['step2_text'] ?? ''),
+            'step3_title' => (string)($r['step3_title'] ?? ''),
+            'step3_text' => (string)($r['step3_text'] ?? ''),
             'icon' => (string)($r['icon'] ?? ''),
             'external_url' => $r['external_url'] ? (string)$r['external_url'] : null,
             'coming_soon' => !empty($r['coming_soon']),
@@ -78,6 +143,16 @@ function services_upsert(array $input, PDO $pdo = null): int
     $title = trim((string)($input['title'] ?? ''));
     $description = trim((string)($input['description'] ?? ''));
     $details = trim((string)($input['details'] ?? ''));
+    $detailsIsHtml = !empty($input['details_is_html']) ? 1 : 0;
+    if ($details !== '' && $detailsIsHtml) {
+        $details = services_sanitize_details_html($details);
+    }
+    $step1Title = trim((string)($input['step1_title'] ?? ''));
+    $step1Text = trim((string)($input['step1_text'] ?? ''));
+    $step2Title = trim((string)($input['step2_title'] ?? ''));
+    $step2Text = trim((string)($input['step2_text'] ?? ''));
+    $step3Title = trim((string)($input['step3_title'] ?? ''));
+    $step3Text = trim((string)($input['step3_text'] ?? ''));
     $icon = trim((string)($input['icon'] ?? ''));
     $external = trim((string)($input['external_url'] ?? ''));
     $external = $external === '' ? null : $external;
@@ -85,12 +160,23 @@ function services_upsert(array $input, PDO $pdo = null): int
     $sort = (int)($input['sort_order'] ?? 0);
 
     if ($id > 0) {
-        $stmt = $pdo->prepare('UPDATE services SET slug=:slug,title=:title,description=:description,details=:details,icon=:icon,external_url=:external_url,coming_soon=:coming_soon,sort_order=:sort_order WHERE id=:id');
+        $stmt = $pdo->prepare(
+            'UPDATE services SET slug=:slug,title=:title,description=:description,details=:details,details_is_html=:dih,' .
+            'step1_title=:s1t,step1_text=:s1x,step2_title=:s2t,step2_text=:s2x,step3_title=:s3t,step3_text=:s3x,' .
+            'icon=:icon,external_url=:external_url,coming_soon=:coming_soon,sort_order=:sort_order WHERE id=:id'
+        );
         $stmt->execute([
             ':slug' => $slug,
             ':title' => $title,
             ':description' => ($description === '' ? null : $description),
             ':details' => ($details === '' ? null : $details),
+            ':dih' => $detailsIsHtml,
+            ':s1t' => ($step1Title === '' ? null : $step1Title),
+            ':s1x' => ($step1Text === '' ? null : $step1Text),
+            ':s2t' => ($step2Title === '' ? null : $step2Title),
+            ':s2x' => ($step2Text === '' ? null : $step2Text),
+            ':s3t' => ($step3Title === '' ? null : $step3Title),
+            ':s3x' => ($step3Text === '' ? null : $step3Text),
             ':icon' => ($icon === '' ? null : $icon),
             ':external_url' => $external,
             ':coming_soon' => $comingSoon,
@@ -101,12 +187,22 @@ function services_upsert(array $input, PDO $pdo = null): int
         return $id;
     }
 
-    $stmt = $pdo->prepare('INSERT INTO services (slug,title,description,details,icon,external_url,coming_soon,sort_order) VALUES (:slug,:title,:description,:details,:icon,:external_url,:coming_soon,:sort_order)');
+    $stmt = $pdo->prepare(
+        'INSERT INTO services (slug,title,description,details,details_is_html,step1_title,step1_text,step2_title,step2_text,step3_title,step3_text,icon,external_url,coming_soon,sort_order) ' .
+        'VALUES (:slug,:title,:description,:details,:dih,:s1t,:s1x,:s2t,:s2x,:s3t,:s3x,:icon,:external_url,:coming_soon,:sort_order)'
+    );
     $stmt->execute([
         ':slug' => $slug,
         ':title' => $title,
         ':description' => ($description === '' ? null : $description),
         ':details' => ($details === '' ? null : $details),
+        ':dih' => $detailsIsHtml,
+        ':s1t' => ($step1Title === '' ? null : $step1Title),
+        ':s1x' => ($step1Text === '' ? null : $step1Text),
+        ':s2t' => ($step2Title === '' ? null : $step2Title),
+        ':s2x' => ($step2Text === '' ? null : $step2Text),
+        ':s3t' => ($step3Title === '' ? null : $step3Title),
+        ':s3x' => ($step3Text === '' ? null : $step3Text),
         ':icon' => ($icon === '' ? null : $icon),
         ':external_url' => $external,
         ':coming_soon' => $comingSoon,

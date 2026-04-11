@@ -13,9 +13,9 @@ ob_start();
     <div class="row align-items-center g-4">
       <div class="col-12 col-lg-6">
         <div class="ud-hero__kicker">GROUPE YOMBAL</div>
-        <h1 class="ud-hero__headline mb-3">Univers Diaspora</h1>
+        <h1 class="ud-hero__headline mb-3"><span class="ud-hero__brand">Univers Diaspora</span></h1>
         <p class="ud-hero__tagline mb-4">
-          <strong>L'agence UNIVERS DIASPORA vous conseille et vous accompagne pour la réalisation de vos projets d'ici et d'ailleurs !</strong>
+          L’agence <strong>Univers Diaspora</strong> vous conseille et vous accompagne pour la réalisation de vos projets, en France et à l’international.
         </p>
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-primary ud-btn ud-btn--cta" href="#services">Découvrir nos services</a>
@@ -69,12 +69,12 @@ ob_start();
               <div class="ud-stat__label">pôles</div>
             </div>
             <div class="ud-stat">
-              <div class="ud-stat__num">24/7</div>
-              <div class="ud-stat__label">support</div>
+              <div class="ud-stat__num ud-stat__num--text">Sur mesure</div>
+              <div class="ud-stat__label">accompagnement</div>
             </div>
             <div class="ud-stat">
-              <div class="ud-stat__num">360°</div>
-              <div class="ud-stat__label">solutions</div>
+              <div class="ud-stat__num ud-stat__num--text">France &amp; international</div>
+              <div class="ud-stat__label">intervention</div>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ ob_start();
           <div class="ud-service-card h-100 ud-reveal" data-reveal-index="<?= (int)($s['sort_order'] ?? 0) ?>">
             <div class="ud-service-card__top">
               <a class="ud-service-card__icon" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?> aria-label="<?= h($s['title']) ?>">
-                <img src="<?= h($baseUrl) ?>/public/assets/img/<?= h($s['icon']) ?>" alt="<?= h($s['title']) ?>">
+                <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl)) ?>" alt="<?= h($s['title']) ?>">
               </a>
               <?php if (!empty($s['coming_soon'])): ?>
                 <span class="ud-pill ud-pill--soon">Bientôt</span>
@@ -169,14 +169,14 @@ ob_start();
               <div class="form-check">
                 <input class="form-check-input <?= isset($errors['consent']) ? 'is-invalid' : '' ?>" type="checkbox" value="1" id="consent" name="consent" <?= !empty($old['consent']) ? 'checked' : '' ?> required>
                 <label class="form-check-label" for="consent">
-                  J’accepte que mes données ci-dessus communiquées et remplies soient transmises et utilisées *
+                  J’accepte que mes données soient traitées pour répondre à ma demande (base légale : intérêt légitime / exécution de mesures précontractuelles). *
                 </label>
                 <?php if (isset($errors['consent'])): ?><div class="invalid-feedback d-block"><?= h($errors['consent']) ?></div><?php endif; ?>
               </div>
               <div class="form-check mt-2">
                 <input class="form-check-input <?= isset($errors['privacy']) ? 'is-invalid' : '' ?>" type="checkbox" value="1" id="privacy" name="privacy" <?= !empty($old['privacy']) ? 'checked' : '' ?> required>
                 <label class="form-check-label" for="privacy">
-                  Vous affirmez avoir pris connaissance de notre Politique de confidentialité. *
+                  J’ai lu la <a href="<?= h($baseUrl) ?>/?page=politique-confidentialite" target="_blank" rel="noopener noreferrer">politique de confidentialité</a>. *
                 </label>
                 <?php if (isset($errors['privacy'])): ?><div class="invalid-feedback d-block"><?= h($errors['privacy']) ?></div><?php endif; ?>
               </div>
@@ -295,7 +295,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'Univers Diaspora',
+    'title' => 'Univers Diaspora — Accueil',
+    'meta_description' => 'Univers Diaspora vous conseille et vous accompagne pour vos projets en France et à l\'international : services, contact et rendez-vous.',
     'active' => '',
     'content' => $content,
     'flash' => $flash ?? [],

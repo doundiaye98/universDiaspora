@@ -1,0 +1,10 @@
+# Secrets locaux (ne jamais commiter)
+/config/config.local.php
+
+# Fichiers candidatures (PDF) — ne pas versionner
+/storage/candidatures/*
+!/storage/candidatures/.gitkeep
+
+# Photos équipe (upload admin)
+/public/assets/img/team/*
+!/public/assets/img/team/.gitkeep

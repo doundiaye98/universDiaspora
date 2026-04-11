@@ -1,0 +1,60 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Copiez ce fichier en config.local.php (même dossier) et adaptez les valeurs.
+ * config.local.php est ignoré par Git (.gitignore).
+ */
+return [
+    'db' => [
+        'pass' => 'root',
+    ],
+    'admin' => [
+        'username' => 'admin',
+        'password' => 'admin123',
+    ],
+    // Exemple (à adapter) : mentions légales & politique de confidentialité du site.
+    // 'legal' => [
+    //     'documents_last_updated' => '2026-04-04',
+    //     'publisher' => [
+    //         'legal_name' => 'Univers Diaspora SAS',
+    //         'legal_form' => 'SAS',
+    //         'address_line1' => '10 rue Exemple',
+    //         'postal_code' => '75001',
+    //         'city' => 'Paris',
+    //         'siret' => '123 456 789 00012',
+    //         'rcs_number' => '123 456 789',
+    //         'rcs_city' => 'Paris',
+    //         'share_capital' => '10 000 €',
+    //         'vat_number' => '',
+    //         'director_name' => 'Prénom Nom',
+    //         'phone' => '+33 1 23 45 67 89',
+    //         'email' => 'contact@votredomaine.com',
+    //         'email_dpo' => 'dpo@votredomaine.com',
+    //     ],
+    //     'hosting' => [
+    //         'name' => 'OVH SAS',
+    //         'address' => '2 rue Kellermann, 59100 Roubaix, France',
+    //         'website' => 'https://www.ovhcloud.com',
+    //     ],
+    //     'privacy' => [
+    //         'retention_summary' => 'Les demandes de contact et rendez-vous sont conservées pendant la durée nécessaire au traitement, puis jusqu’à 3 ans à des fins de preuve en cas de litige.',
+    //         'cookies_summary' => 'Des cookies techniques strictement nécessaires au fonctionnement du site (session, sécurité) peuvent être déposés. Aucun cookie publicitaire n’est utilisé.',
+    //         'uses_audience_measurement' => false,
+    //     ],
+    // ],
+    'mail' => [
+        'enable' => false,
+        'to' => 'votre-email@domaine.com',
+        'from' => 'no-reply@votredomaine.com',
+        // Exemple Brevo / SendGrid : host, port 587, encryption tls, user + mot de passe SMTP
+        // 'transport' => 'smtp',
+        // 'smtp' => [
+        //     'host' => 'smtp-relay.brevo.com',
+        //     'port' => 587,
+        //     'encryption' => 'tls',
+        //     'username' => 'votre-login-smtp',
+        //     'password' => 'votre-cle-smtp',
+        // ],
+    ],
+];

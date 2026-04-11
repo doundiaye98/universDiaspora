@@ -24,6 +24,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title><?= h($title) ?></title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +60,9 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
     <nav class="ud-admin-nav">
       <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-announcements', 'Offres &amp; recrutement', $currentPage === 'admin-announcements') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
       <div class="ud-admin-nav__divider"></div>
@@ -87,6 +91,9 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
       <nav class="ud-admin-nav">
         <?= adminNavLink($baseUrl . '/?page=admin', 'Dashboard', $currentPage === 'admin') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-announcements', 'Offres &amp; recrutement', $currentPage === 'admin-announcements') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
         <div class="ud-admin-nav__divider"></div>
@@ -106,17 +113,17 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
     </header>
 
     <?php if (!empty($flash['success'])): ?>
-      <div class="container mt-3">
+      <div class="container-fluid px-3 px-md-4 mt-3">
         <div class="alert alert-success mb-0"><?= h($flash['success']) ?></div>
       </div>
     <?php endif; ?>
     <?php if (!empty($flash['error'])): ?>
-      <div class="container mt-3">
+      <div class="container-fluid px-3 px-md-4 mt-3">
         <div class="alert alert-danger mb-0"><?= h($flash['error']) ?></div>
       </div>
     <?php endif; ?>
 
-    <main class="ud-admin-main__content">
+    <main class="ud-admin-main__content ud-admin-main__content--padded">
       <?= $content ?>
     </main>
   </div>

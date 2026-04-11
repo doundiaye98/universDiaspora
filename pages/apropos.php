@@ -51,7 +51,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'À propos',
+    'title' => 'À propos — Univers Diaspora',
+    'meta_description' => 'Univers Diaspora : mission, équipe et services pour accompagner la diaspora en France et à l\'international.',
     'active' => 'apropos',
     'content' => $content,
 ];

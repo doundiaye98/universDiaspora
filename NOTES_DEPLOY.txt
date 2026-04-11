@@ -1,0 +1,42 @@
+Mise en production — rappels rapides
+====================================
+
+0) Mot de passe admin oublié (accès perdu)
+   - En local, à la racine du projet :
+     php scripts/reset_admin_password.php "VotreNouveauMotDePasseFort"
+   - Si plusieurs comptes admin en base, lister le nom exact puis :
+     php scripts/reset_admin_password.php "MotDePasse" "nom_utilisateur_en_base"
+   - Sous Windows, utilisez le php.exe de WAMP si « php » n’est pas dans le PATH.
+   - Ensuite : connexion sur /?page=admin-login avec ce mot de passe et le nom d’utilisateur affiché par le script.
+
+0b) Connexion impossible alors que le mot de passe est bon
+   - Utilisez toujours la même URL que dans config (app.base_url) : ne mélangez pas
+     http://localhost/... et http://127.0.0.1/... (la session PHP est liée au nom d’hôte).
+   - En base : UPDATE admin_users SET is_active = 1 WHERE username = 'votre_compte';
+   - Le formulaire admin envoie désormais la requête sur la même page (évite ce problème).
+
+1) Configuration / secrets
+   - Ne commitez pas config/config.local.php (déjà dans .gitignore).
+   - En prod : copiez config/config.local.php.example vers config.local.php et renseignez
+     mots de passe DB, compte admin (mot de passe fort), URLs réelles.
+
+2) Emails
+   - mail.enable = true dans config.local.php.
+   - Préférez mail.transport = "smtp" avec un relais (Brevo, SendGrid, SMTP hébergeur).
+   - Lorsqu’un admin confirme un rendez-vous (Inbox), un e-mail de confirmation est envoyé
+     à l’adresse laissée par le client — sans mail.enable + SMTP correct, l’envoi échoue.
+   - En TLS, si certificat local pose problème, vous pouvez mettre smtp.verify_peer = false
+     uniquement en développement (déconseillé en production).
+
+3) Sauvegardes
+   - Base MySQL : export régulier (mysqldump ou outil hébergeur).
+   - Fichiers : sauvegarde du dossier du site + config.local.php hors serveur si besoin.
+   - Candidatures (PDF) : dossier storage/candidatures/ (hors Git) — inclure dans les backups.
+
+3b) Candidatures / uploads PHP
+   - Chaque fichier PDF est limité à 5 Mo côté application ; vérifier upload_max_filesize
+     et post_max_size dans php.ini (ex. 8M ou plus) pour permettre deux fichiers par envoi.
+
+4) Légal
+   - Complétez pages/mentions_legales.php et pages/politique_confidentialite.php avec vos
+     données réelles (raison sociale, SIREN, hébergeur, durées de conservation, cookies).

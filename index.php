@@ -5,6 +5,9 @@ require __DIR__ . '/app/http.php';
 require __DIR__ . '/app/db.php';
 require __DIR__ . '/app/admin.php';
 require __DIR__ . '/app/services.php';
+require __DIR__ . '/app/announcements.php';
+require __DIR__ . '/app/job_applications.php';
+require __DIR__ . '/app/team_members.php';
 require __DIR__ . '/app/mailer.php';
 
 session_start();
@@ -106,17 +109,26 @@ if (($_GET['action'] ?? '') === 'admin-login' && $_SERVER['REQUEST_METHOD'] === 
 
     try {
         $pdo = db();
-        if (!admin_login($pdo, $old['username'], $password)) {
-            $errors['password'] = 'Identifiants invalides.';
+        $loginCode = admin_login($pdo, $old['username'], $password);
+        if ($loginCode !== 0) {
+            $errors['password'] = $loginCode === 2
+                ? 'Ce compte est désactivé. Réactivez-le dans la base (is_active = 1) ou via un autre admin.'
+                : 'Identifiants invalides.';
             require __DIR__ . '/pages/admin/login.php';
             exit;
         }
+        session_regenerate_id(true);
         $_SESSION['flash'] = ['success' => 'Connexion réussie.'];
         redirect('./?page=admin');
     } catch (Throwable $e) {
         $_SESSION['flash'] = ['error' => 'Impossible de se connecter.'];
         redirect('./?page=admin-login');
     }
+}
+
+// GET ?action=admin-login → même page que ?page=admin-login (sinon on tombe sur l'accueil car "page" est vide)
+if (($_GET['action'] ?? '') === 'admin-login' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    redirect('./?page=admin-login');
 }
 
 if (($_GET['action'] ?? '') === 'admin-logout') {
@@ -145,6 +157,14 @@ if (($_GET['action'] ?? '') === 'admin-appointment-status' && $_SERVER['REQUEST_
 
     try {
         $pdo = db();
+        $prevStmt = $pdo->prepare('SELECT status, name, email, office, appointment_at FROM appointments WHERE id = :id LIMIT 1');
+        $prevStmt->execute([':id' => $id]);
+        $prev = $prevStmt->fetch();
+        if (!is_array($prev)) {
+            $_SESSION['flash'] = ['error' => 'Rendez-vous introuvable.'];
+            redirect('./?page=admin-messages');
+        }
+
         $confirmedAt = $status === 'confirmed' ? date('Y-m-d H:i:s') : null;
         $confirmedBy = $status === 'confirmed' ? ($_SESSION['admin']['username'] ?? null) : null;
 
@@ -162,7 +182,20 @@ if (($_GET['action'] ?? '') === 'admin-appointment-status' && $_SERVER['REQUEST_
             ':id' => $id,
         ]);
 
-        $_SESSION['flash'] = ['success' => 'Statut du rendez-vous mis à jour.'];
+        $flashSuccess = 'Statut du rendez-vous mis à jour.';
+        $becomesConfirmed = $status === 'confirmed' && (($prev['status'] ?? '') !== 'confirmed');
+        if ($becomesConfirmed) {
+            try {
+                $sent = ud_mail_appointment_confirmed_to_client($prev, $config);
+                $flashSuccess = $sent
+                    ? 'Rendez-vous confirmé. Un e-mail de confirmation a été envoyé au client.'
+                    : 'Rendez-vous confirmé. L’e-mail n’a pas pu être envoyé (activez mail.enable et SMTP dans la configuration, ou vérifiez l’adresse e-mail du client).';
+            } catch (Throwable $e) {
+                $flashSuccess = 'Rendez-vous confirmé. L’envoi de l’e-mail au client a échoué.';
+            }
+        }
+
+        $_SESSION['flash'] = ['success' => $flashSuccess];
         redirect('./?page=admin-messages');
     } catch (Throwable $e) {
         $_SESSION['flash'] = ['error' => 'Impossible de mettre à jour le statut.'];
@@ -183,6 +216,13 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         'title' => post('title'),
         'description' => post('description'),
         'details' => post('details'),
+        'details_is_html' => post('details_is_html'),
+        'step1_title' => post('step1_title'),
+        'step1_text' => post('step1_text'),
+        'step2_title' => post('step2_title'),
+        'step2_text' => post('step2_text'),
+        'step3_title' => post('step3_title'),
+        'step3_text' => post('step3_text'),
         'icon' => post('icon'),
         'external_url' => post('external_url'),
         'sort_order' => post('sort_order'),
@@ -199,7 +239,7 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
     }
 
     if (!empty($errors)) {
-        require __DIR__ . '/pages/admin/services_edit.php';
+        require __DIR__ . '/pages/admin/services.php';
         exit;
     }
 
@@ -209,6 +249,13 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         'title' => $old['title'],
         'description' => $old['description'],
         'details' => $old['details'],
+        'details_is_html' => ($old['details_is_html'] === '1'),
+        'step1_title' => $old['step1_title'],
+        'step1_text' => $old['step1_text'],
+        'step2_title' => $old['step2_title'],
+        'step2_text' => $old['step2_text'],
+        'step3_title' => $old['step3_title'],
+        'step3_text' => $old['step3_text'],
         'icon' => $old['icon'],
         'external_url' => $old['external_url'],
         'sort_order' => (int)($old['sort_order'] === '' ? 0 : $old['sort_order']),
@@ -231,6 +278,186 @@ if (($_GET['action'] ?? '') === 'admin-service-delete' && $_SERVER['REQUEST_METH
         $_SESSION['flash'] = ['success' => 'Service supprimé.'];
     }
     redirect('./?page=admin-services');
+}
+
+// Admin: Offres & recrutement
+if (($_GET['action'] ?? '') === 'admin-announcement-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+
+    $old = [
+        'id' => post('id'),
+        'category' => post('category'),
+        'title' => post('title'),
+        'summary' => post('summary'),
+        'content' => post('content'),
+        'sort_order' => post('sort_order'),
+        'is_published' => post('is_published'),
+    ];
+    $errors = [];
+    if (trim((string)$old['title']) === '') {
+        $errors['title'] = 'Titre requis.';
+    }
+    $cat = (string)$old['category'];
+    if (!in_array($cat, ['offre', 'recrutement'], true)) {
+        $errors['category'] = 'Catégorie invalide.';
+    }
+
+    if (!empty($errors)) {
+        require __DIR__ . '/pages/admin/announcements.php';
+        exit;
+    }
+
+    $payload = [
+        'id' => (int)$old['id'],
+        'category' => $cat,
+        'title' => trim((string)$old['title']),
+        'summary' => trim((string)$old['summary']),
+        'content' => trim((string)$old['content']),
+        'sort_order' => (int)($old['sort_order'] === '' ? 0 : $old['sort_order']),
+        'is_published' => ($old['is_published'] === '1'),
+    ];
+    $id = announcements_upsert($payload);
+    $_SESSION['flash'] = ['success' => 'Annonce enregistrée.'];
+    redirect('./?page=admin-announcements&edit=' . $id);
+}
+
+if (($_GET['action'] ?? '') === 'admin-announcement-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+    $id = (int)post('id');
+    if ($id > 0) {
+        announcements_delete($id);
+        $_SESSION['flash'] = ['success' => 'Annonce supprimée.'];
+    }
+    redirect('./?page=admin-announcements');
+}
+
+// Admin: membres de l'équipe (CRUD + photo)
+if (($_GET['action'] ?? '') === 'admin-team-member-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+
+    $pdo = db();
+    $id = (int)post('id');
+    $old = [
+        'id' => $id,
+        'name' => post('name'),
+        'role' => post('role'),
+        'bio' => post('bio'),
+        'sort_order' => post('sort_order'),
+    ];
+    $errors = [];
+    if (trim((string)$old['name']) === '') {
+        $errors['name'] = 'Nom requis.';
+    }
+
+    $file = isset($_FILES['photo']) && is_array($_FILES['photo']) ? $_FILES['photo'] : null;
+    $hasNewUpload = $file !== null && (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+    if ($hasNewUpload) {
+        $imgErr = team_members_validate_image_upload($file);
+        if ($imgErr !== null) {
+            $errors['photo'] = $imgErr;
+        }
+    }
+
+    if (!empty($errors)) {
+        require __DIR__ . '/pages/admin/team_members.php';
+        exit;
+    }
+
+    $removePhoto = post('remove_photo') === '1';
+    $existing = $id > 0 ? team_members_find($id, $pdo) : null;
+    $photoFilename = $existing && !empty($existing['photo']) ? (string)$existing['photo'] : null;
+
+    if ($removePhoto) {
+        if ($photoFilename !== null) {
+            team_members_delete_photo_file($photoFilename);
+        }
+        $photoFilename = null;
+    }
+
+    if ($hasNewUpload && ($file['error'] ?? 0) === UPLOAD_ERR_OK) {
+        try {
+            $newName = team_members_store_image($file);
+            if ($photoFilename !== null) {
+                team_members_delete_photo_file($photoFilename);
+            }
+            $photoFilename = $newName;
+        } catch (Throwable $e) {
+            $_SESSION['flash'] = ['error' => 'Impossible d’enregistrer la photo.'];
+            redirect('./?page=admin-team-members&edit=' . ($id > 0 ? $id : 'new'));
+        }
+    }
+
+    try {
+        $newId = team_members_upsert([
+            'id' => $id,
+            'name' => trim((string)$old['name']),
+            'role' => trim((string)$old['role']),
+            'bio' => trim((string)$old['bio']),
+            'sort_order' => (int)($old['sort_order'] === '' ? 0 : $old['sort_order']),
+            'photo' => $photoFilename,
+        ], $pdo);
+        $_SESSION['flash'] = ['success' => 'Membre enregistré.'];
+        redirect('./?page=admin-team-members&edit=' . $newId);
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['error' => 'Impossible d’enregistrer le membre.'];
+        redirect('./?page=admin-team-members');
+    }
+}
+
+if (($_GET['action'] ?? '') === 'admin-team-member-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+    $id = (int)post('id');
+    if ($id > 0) {
+        team_members_delete($id);
+        $_SESSION['flash'] = ['success' => 'Membre supprimé.'];
+    }
+    redirect('./?page=admin-team-members');
+}
+
+// Admin: télécharger un PDF de candidature (CV ou lettre)
+if (($_GET['action'] ?? '') === 'admin-job-application-file') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    $id = (int)($_GET['id'] ?? 0);
+    $kind = (string)($_GET['kind'] ?? '');
+    if ($id <= 0 || !in_array($kind, ['cv', 'cover'], true)) {
+        http_response_code(404);
+        echo 'Not found';
+        exit;
+    }
+    $pdo = db();
+    $row = job_applications_find($id, $pdo);
+    if (!is_array($row)) {
+        http_response_code(404);
+        echo 'Not found';
+        exit;
+    }
+    $rel = $kind === 'cv' ? (string)($row['cv_path'] ?? '') : (string)($row['cover_path'] ?? '');
+    $abs = job_applications_abs_path($rel);
+    if ($abs === null) {
+        http_response_code(404);
+        echo 'Not found';
+        exit;
+    }
+    $filename = $kind === 'cv' ? 'cv.pdf' : 'lettre-motivation.pdf';
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . (string)filesize($abs));
+    readfile($abs);
+    exit;
 }
 
 // Admin: Manage admin users
@@ -341,6 +568,119 @@ if (($_GET['action'] ?? '') === 'contact' && $_SERVER['REQUEST_METHOD'] === 'POS
     }
 }
 
+// Candidature (recrutement) — CV + lettre de motivation en PDF
+if (($_GET['action'] ?? '') === 'job-application' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+
+    $announcementId = (int)($_POST['announcement_id'] ?? 0);
+    $old = [
+        'announcement_id' => $announcementId,
+        'full_name' => trim((string)($_POST['full_name'] ?? '')),
+        'email' => trim((string)($_POST['email'] ?? '')),
+        'phone' => trim((string)($_POST['phone'] ?? '')),
+        'message' => trim((string)($_POST['message'] ?? '')),
+        'website' => trim((string)($_POST['website'] ?? '')),
+    ];
+
+    $errors = [];
+    if ($old['website'] !== '') {
+        redirect('./?page=offres-recrutement');
+    }
+
+    $pdo = db();
+    $ann = announcements_find_public_recruitment($announcementId, $pdo);
+    if (!$ann) {
+        $errors['announcement'] = 'Cette offre n’est plus disponible ou est introuvable.';
+    }
+
+    if ($old['full_name'] === '' || mb_strlen($old['full_name']) > 200) {
+        $errors['full_name'] = 'Veuillez renseigner votre nom et prénom (200 caractères max.).';
+    }
+    if ($old['email'] === '' || !filter_var($old['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Veuillez renseigner un email valide.';
+    }
+    if ($old['phone'] !== '' && mb_strlen($old['phone']) > 50) {
+        $errors['phone'] = 'Téléphone trop long.';
+    }
+    if (mb_strlen($old['message']) > 4000) {
+        $errors['message'] = 'Message trop long.';
+    }
+
+    $cvFile = isset($_FILES['cv']) && is_array($_FILES['cv']) ? $_FILES['cv'] : null;
+    $coverFile = isset($_FILES['cover_letter']) && is_array($_FILES['cover_letter']) ? $_FILES['cover_letter'] : null;
+
+    if (!is_array($cvFile)) {
+        $errors['cv'] = 'CV (PDF) requis.';
+    } else {
+        $e = job_applications_validate_pdf_field($cvFile, 'CV');
+        if ($e !== null) {
+            $errors['cv'] = $e;
+        }
+    }
+    if (!is_array($coverFile)) {
+        $errors['cover_letter'] = 'Lettre de motivation (PDF) requise.';
+    } else {
+        $e = job_applications_validate_pdf_field($coverFile, 'Lettre de motivation');
+        if ($e !== null) {
+            $errors['cover_letter'] = $e;
+        }
+    }
+
+    if (!empty($errors)) {
+        $_SESSION['job_apply_errors'] = $errors;
+        $_SESSION['job_apply_old'] = $old;
+        $q = $announcementId > 0 ? '&apply=' . $announcementId : '';
+        redirect('./?page=offres-recrutement' . $q);
+    }
+
+    try {
+        $cvRel = job_applications_store_pdf($cvFile, 'cv');
+        $coverRel = job_applications_store_pdf($coverFile, 'lm');
+    } catch (Throwable $e) {
+        $_SESSION['job_apply_errors'] = ['global' => 'Impossible d’enregistrer les fichiers. Réessayez.'];
+        $_SESSION['job_apply_old'] = $old;
+        redirect('./?page=offres-recrutement&apply=' . $announcementId);
+    }
+
+    try {
+        job_applications_insert(
+            $pdo,
+            $announcementId,
+            $old['full_name'],
+            $old['email'],
+            $old['phone'],
+            $old['message'],
+            $cvRel,
+            $coverRel
+        );
+        try {
+            $mailTo = (string)($config['mail']['to'] ?? '');
+            if ($mailTo !== '' && $ann !== null) {
+                $subject = '[Candidature] ' . ($ann['title'] ?? 'Recrutement');
+                $body =
+                    "Nouvelle candidature reçue.\n\n" .
+                    'Poste : ' . ($ann['title'] ?? '') . "\n" .
+                    'Nom : ' . $old['full_name'] . "\n" .
+                    'Email : ' . $old['email'] . "\n" .
+                    'Téléphone : ' . ($old['phone'] !== '' ? $old['phone'] : '—') . "\n\n" .
+                    ($old['message'] !== '' ? "Message :\n" . $old['message'] . "\n\n" : '') .
+                    'Liste des candidatures : ' . $baseUrl . '/?page=admin-job-applications' . "\n";
+                ud_mail_try_send($mailTo, $subject, $body);
+            }
+        } catch (Throwable $e) {
+            // Email optionnel
+        }
+    } catch (Throwable $e) {
+        job_applications_delete_files([$cvRel, $coverRel]);
+        $_SESSION['flash'] = ['error' => 'Impossible d’enregistrer la candidature. Réessayez plus tard.'];
+        redirect('./?page=offres-recrutement&apply=' . $announcementId);
+    }
+
+    $_SESSION['flash'] = ['success' => 'Votre candidature a bien été envoyée. Merci !'];
+    redirect('./?page=offres-recrutement');
+}
+
 // Simple router: home or service page by slug
 $page = (string)($_GET['page'] ?? '');
 if ($page === '' || $page === 'home') {
@@ -352,11 +692,18 @@ $specialPages = [
     'demarrer-maintenant' => __DIR__ . '/pages/start.php',
     'rendez-vous' => __DIR__ . '/pages/appointment.php',
     'apropos' => __DIR__ . '/pages/apropos.php',
+    'equipe' => __DIR__ . '/pages/equipe.php',
+    'mentions-legales' => __DIR__ . '/pages/mentions_legales.php',
+    'politique-confidentialite' => __DIR__ . '/pages/politique_confidentialite.php',
+    'offres-recrutement' => __DIR__ . '/pages/offres_recrutement.php',
     'admin-login' => __DIR__ . '/pages/admin/login.php',
     'admin' => __DIR__ . '/pages/admin/dashboard.php',
     'admin-services' => __DIR__ . '/pages/admin/services.php',
     'admin-admins' => __DIR__ . '/pages/admin/admins.php',
     'admin-messages' => __DIR__ . '/pages/admin/messages.php',
+    'admin-announcements' => __DIR__ . '/pages/admin/announcements.php',
+    'admin-job-applications' => __DIR__ . '/pages/admin/job_applications.php',
+    'admin-team-members' => __DIR__ . '/pages/admin/team_members.php',
 ];
 if (isset($specialPages[$page])) {
     require $specialPages[$page];

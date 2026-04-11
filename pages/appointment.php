@@ -86,6 +86,11 @@ ob_start();
               <textarea class="form-control" name="message" rows="4"><?= h($old['message'] ?? '') ?></textarea>
             </div>
 
+            <div class="col-12 small text-muted">
+              En envoyant ce formulaire, vous acceptez que vos données soient utilisées pour traiter votre demande de rendez-vous.
+              Voir la <a href="<?= h($baseUrl) ?>/?page=politique-confidentialite">politique de confidentialité</a>.
+            </div>
+
             <div class="ud-hp" aria-hidden="true">
               <label>Website</label>
               <input tabindex="-1" autocomplete="off" class="form-control" name="website" value="">
@@ -115,7 +120,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'Rendez-vous',
+    'title' => 'Rendez-vous — Univers Diaspora',
+    'meta_description' => 'Prenez rendez-vous avec Univers Diaspora : choix du bureau, date et coordonnées pour une prise en charge rapide.',
     'active' => '',
     'content' => $content,
     'flash' => $flash ?? [],
