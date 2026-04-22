@@ -44,16 +44,219 @@ function services_sanitize_details_html(string $html): string
     return strip_tags($html, $allowed);
 }
 
-/** URL publique de l’icône, ou image SVG inline si le fichier est absent. */
-function service_icon_url(string $iconFilename, string $baseUrl): string
+/**
+ * Fichiers d’icône par slug quand le nom ne suit pas le motif univers-diasporas-icone-{slug}.png
+ * (ex. « Développement web » → même visuel que la fiche Informatiques).
+ *
+ * @return array<string, string> slug (minuscules) => nom de fichier dans public/assets/img/
+ */
+function service_icon_slug_aliases(): array
 {
-    $base = basename(trim($iconFilename));
-    $root = dirname(__DIR__);
-    if ($base !== '' && is_file($root . '/public/assets/img/' . $base)) {
-        return rtrim($baseUrl, '/') . '/public/assets/img/' . rawurlencode($base);
+    $informatiques = 'univers-diasporas-icone-informatiques.png';
+    return [
+        'developpement-web' => $informatiques,
+        'developpement' => $informatiques,
+        'web' => $informatiques,
+        'site-web' => $informatiques,
+        'sites-internet' => $informatiques,
+        'informatique' => $informatiques,
+        // Slug « immobilier-btp » mais fichier seed : univers-diasporas-icone-immobilier.png (sans « -btp »)
+        'immobilier-btp' => 'univers-diasporas-icone-immobilier.png',
+    ];
+}
+
+/**
+ * URL publique de l’icône, ou image SVG inline si aucun fichier ne convient.
+ *
+ * @param string|null $serviceSlug Slug du service (ex. developpement-web) : permet un repli si icon est vide ou fichier manquant.
+ */
+function service_icon_url(string $iconFilename, string $baseUrl, ?string $serviceSlug = null): string
+{
+    $raw = trim($iconFilename);
+    if ($raw !== '' && preg_match('~^https?://~i', $raw)) {
+        return $raw;
     }
+    $raw = str_replace('\\', '/', $raw);
+    if (preg_match('~(?:^|/)(?:public/)?assets/img/(.+)$~i', $raw, $m)) {
+        $raw = $m[1];
+    }
+    $base = basename($raw);
+    $root = dirname(__DIR__);
+    $dirFs = $root . '/public/assets/img/';
+
+    $tryFile = static function (string $filename) use ($dirFs, $baseUrl): ?string {
+        $name = basename($filename);
+        if ($name === '' || $name === '.' || $name === '..') {
+            return null;
+        }
+        $fs = $dirFs . $name;
+        if (is_file($fs)) {
+            $url = ud_public_asset_url('img/' . $name, $baseUrl);
+            $mtime = @filemtime($fs);
+            if ($mtime !== false) {
+                $url .= '?v=' . $mtime;
+            }
+            return $url;
+        }
+        return null;
+    };
+
+    if ($base !== '') {
+        $u = $tryFile($base);
+        if ($u !== null) {
+            return $u;
+        }
+    }
+
+    $slugKey = strtolower(trim((string)($serviceSlug ?? '')));
+    if ($slugKey !== '') {
+        $aliases = service_icon_slug_aliases();
+        if (isset($aliases[$slugKey])) {
+            $u = $tryFile($aliases[$slugKey]);
+            if ($u !== null) {
+                return $u;
+            }
+        }
+        $safe = preg_replace('~[^a-z0-9-]~', '', $slugKey);
+        if ($safe !== '') {
+            $u = $tryFile('univers-diasporas-icone-' . $safe . '.png');
+            if ($u !== null) {
+                return $u;
+            }
+        }
+    }
+
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect fill="#e8ecf4" width="64" height="64" rx="14"/><path fill="rgba(11,42,111,.35)" d="M32 20c-4.5 0-8 3.5-8 8 0 5 3 9 8 14 5-5 8-9 8-14 0-4.5-3.5-8-8-8zm0 24c-8 0-15 4-15 8v4h30v-4c0-4-7-8-15-8z"/></svg>';
     return 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
+}
+
+function service_icon_public_img_dir(): string
+{
+    return dirname(__DIR__) . '/public/assets/img';
+}
+
+function service_icon_max_upload_bytes(): int
+{
+    return 2 * 1024 * 1024;
+}
+
+/**
+ * Message utilisateur selon le code d’erreur PHP d’upload (UPLOAD_ERR_*).
+ */
+function service_icon_upload_error_message(int $code): string
+{
+    $prefix = 'Photo du service : ';
+    switch ($code) {
+        case UPLOAD_ERR_INI_SIZE:
+            return $prefix . 'le fichier dépasse la limite PHP upload_max_filesize. '
+                . 'Réduisez l’image (ou dans WAMP : PHP → php.ini, augmentez upload_max_filesize et post_max_size, puis redémarrez Apache).';
+        case UPLOAD_ERR_FORM_SIZE:
+            return $prefix . 'le fichier dépasse la limite du formulaire.';
+        case UPLOAD_ERR_PARTIAL:
+            return $prefix . 'transfert incomplet. Réessayez.';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return $prefix . 'dossier temporaire manquant sur le serveur (voir upload_tmp_dir dans php.ini).';
+        case UPLOAD_ERR_CANT_WRITE:
+            return $prefix . 'impossible d’écrire sur le disque (droits ou espace disque).';
+        case UPLOAD_ERR_EXTENSION:
+            return $prefix . 'une extension PHP bloque l’envoi du fichier.';
+        default:
+            return $prefix . 'erreur d’envoi (code ' . $code . ').';
+    }
+}
+
+/**
+ * @return string|null Erreur utilisateur, ou null si OK (y compris « pas de fichier »).
+ */
+function service_icon_validate_upload(?array $file): ?string
+{
+    if ($file === null || !isset($file['error'])) {
+        return null;
+    }
+    if ((int)$file['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+    if ((int)$file['error'] !== UPLOAD_ERR_OK) {
+        return service_icon_upload_error_message((int)$file['error']);
+    }
+    $tmp = (string)($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        return 'Photo du service : envoi invalide.';
+    }
+    $size = (int)($file['size'] ?? 0);
+    if ($size <= 0) {
+        return 'Photo du service : fichier vide ou incomplet.';
+    }
+    if ($size > service_icon_max_upload_bytes()) {
+        return 'Photo du service : fichier trop volumineux (max. 2 Mo).';
+    }
+    $okMime = false;
+    if (function_exists('finfo_open')) {
+        $f = finfo_open(FILEINFO_MIME_TYPE);
+        if ($f) {
+            $mime = finfo_file($f, $tmp);
+            finfo_close($f);
+            $okMime = in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true);
+        }
+    } else {
+        $okMime = true;
+    }
+    if (!$okMime) {
+        return 'Photo du service : JPG, PNG, WebP ou GIF uniquement.';
+    }
+    $head = @file_get_contents($tmp, false, null, 0, 12);
+    if ($head === false || strlen($head) < 4) {
+        return 'Photo du service : fichier image invalide.';
+    }
+    return null;
+}
+
+/**
+ * Enregistre l’icône dans public/assets/img/ et retourne le nom de fichier (ex. svc-mon-slug-a1b2c3d4e.png).
+ */
+function service_icon_store_upload(array $file, string $slug): string
+{
+    $slugPart = preg_replace('~[^a-z0-9-]+~', '-', strtolower(trim($slug)));
+    $slugPart = trim($slugPart, '-');
+    if ($slugPart === '') {
+        $slugPart = 'service';
+    }
+    if (strlen($slugPart) > 48) {
+        $slugPart = substr($slugPart, 0, 48);
+    }
+    $dir = service_icon_public_img_dir();
+    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        throw new RuntimeException('Dossier img inaccessible.');
+    }
+    $tmp = (string)$file['tmp_name'];
+    $mime = 'image/png';
+    if (function_exists('finfo_open')) {
+        $f = finfo_open(FILEINFO_MIME_TYPE);
+        if ($f) {
+            $m = finfo_file($f, $tmp);
+            finfo_close($f);
+            if ($m !== false) {
+                $mime = $m;
+            }
+        }
+    }
+    $ext = 'png';
+    if ($mime === 'image/jpeg') {
+        $ext = 'jpg';
+    } elseif ($mime === 'image/webp') {
+        $ext = 'webp';
+    } elseif ($mime === 'image/gif') {
+        $ext = 'gif';
+    }
+    $name = 'svc-' . $slugPart . '-' . bin2hex(random_bytes(5)) . '.' . $ext;
+    $dest = $dir . DIRECTORY_SEPARATOR . $name;
+    if (!@move_uploaded_file($tmp, $dest)) {
+        throw new RuntimeException('Enregistrement impossible.');
+    }
+    if (!is_file($dest)) {
+        throw new RuntimeException('Enregistrement impossible.');
+    }
+    return $name;
 }
 
 function services_all(PDO $pdo = null): array
@@ -154,6 +357,13 @@ function services_upsert(array $input, PDO $pdo = null): int
     $step3Title = trim((string)($input['step3_title'] ?? ''));
     $step3Text = trim((string)($input['step3_text'] ?? ''));
     $icon = trim((string)($input['icon'] ?? ''));
+    if ($icon !== '' && !preg_match('~^https?://~i', $icon)) {
+        $icon = str_replace('\\', '/', $icon);
+        if (preg_match('~(?:^|/)(?:public/)?assets/img/(.+)$~i', $icon, $im)) {
+            $icon = $im[1];
+        }
+        $icon = basename($icon);
+    }
     $external = trim((string)($input['external_url'] ?? ''));
     $external = $external === '' ? null : $external;
     $comingSoon = !empty($input['coming_soon']) ? 1 : 0;

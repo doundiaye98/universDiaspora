@@ -36,7 +36,7 @@ foreach ($latestAppointments as $a) {
     $statusLabel = $status === 'confirmed' ? 'Confirmé' : ($status === 'cancelled' ? 'Annulé' : 'En attente');
     $timeline[] = [
         'type' => 'appointment',
-        'ts' => (string)($a['appointment_at'] ?? ''),
+        'ts' => (string)($a['created_at'] ?? $a['appointment_at'] ?? ''),
         'title' => (string)($a['name'] ?? ''),
         'subtitle' => (string)($a['office'] ?? ''),
         'meta' => trim(
@@ -55,58 +55,59 @@ $timeline = array_slice($timeline, 0, 10);
 ob_start();
 ?>
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4 ud-admin-dashboard">
-  <div class="ud-admin-hero mb-4">
-    <div class="ud-admin-hero__content">
-      <div class="ud-admin-kicker">Dashboard</div>
-      <h1 class="ud-admin-hero__title mb-2">Espace d’administration</h1>
-      <p class="ud-admin-hero__sub mb-0">
-        Vue rapide sur vos demandes et pages à gérer. Tout est prêt pour être mis à jour depuis l’admin.
-      </p>
-    </div>
-    <div class="ud-admin-hero__actions flex-column flex-sm-row">
-      <a class="btn btn-outline-primary ud-btn ud-btn--ghost w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-services">Gérer services</a>
-      <a class="btn btn-outline-primary ud-btn ud-btn--ghost w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-team-members">Gérer l’équipe</a>
-      <a class="btn btn-primary ud-btn ud-btn--shine w-100 w-sm-auto" href="<?= h($baseUrl) ?>/?page=admin-admins">Gérer admins</a>
+  <div class="ud-admin-dash-hero mb-4">
+    <div class="row g-3 align-items-stretch">
+      <div class="col-12">
+        <p class="ud-admin-dash-hero__lead mb-3">
+          Vue d’ensemble : volumes, accès rapides et dernières demandes (contacts &amp; rendez-vous).
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-primary ud-btn ud-btn--shine btn-sm" href="<?= h($baseUrl) ?>/?page=admin-messages">Ouvrir l’Inbox</a>
+          <a class="btn btn-outline-primary ud-btn ud-btn--ghost btn-sm" href="<?= h($baseUrl) ?>/?page=admin-services">Services</a>
+          <a class="btn btn-outline-primary ud-btn ud-btn--ghost btn-sm" href="<?= h($baseUrl) ?>/?page=admin-announcements">Offres &amp; recrutement</a>
+          <a class="btn btn-outline-primary ud-btn ud-btn--ghost btn-sm" href="<?= h($baseUrl) ?>/?page=admin-team-members">Équipe</a>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-6 col-xl-3">
+  <div class="row g-3 mb-4 row-cols-2 row-cols-md-3 row-cols-xl-6">
+    <div class="col">
       <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-services">
         <div class="ud-admin-metric__label">Services</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['services'] ?></div>
         <div class="ud-admin-metric__hint">Actifs dans le site</div>
       </a>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
+    <div class="col">
       <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-team-members">
         <div class="ud-admin-metric__label">Équipe</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['team_members'] ?></div>
         <div class="ud-admin-metric__hint">Membres sur la page « Notre équipe »</div>
       </a>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="ud-admin-metric ud-admin-stat">
+    <div class="col">
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-messages#ud-inbox-contacts">
         <div class="ud-admin-metric__label">Messages contact</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['contacts'] ?></div>
-        <div class="ud-admin-metric__hint">Demandes reçues</div>
-      </div>
+        <div class="ud-admin-metric__hint">Voir dans l’Inbox</div>
+      </a>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="ud-admin-metric ud-admin-stat">
+    <div class="col">
+      <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-messages#ud-inbox-appts">
         <div class="ud-admin-metric__label">Rendez‑vous</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['appointments'] ?></div>
-        <div class="ud-admin-metric__hint">Demandes enregistrées</div>
-      </div>
+        <div class="ud-admin-metric__hint">Voir dans l’Inbox</div>
+      </a>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
+    <div class="col">
       <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-job-applications">
         <div class="ud-admin-metric__label">Candidatures</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['job_applications'] ?></div>
         <div class="ud-admin-metric__hint">CV &amp; lettres (PDF)</div>
       </a>
     </div>
-    <div class="col-12 col-md-6 col-xl-3">
+    <div class="col">
       <a class="ud-admin-metric ud-admin-metric--link ud-admin-stat" href="<?= h($baseUrl) ?>/?page=admin-admins">
         <div class="ud-admin-metric__label">Administrateurs</div>
         <div class="ud-admin-metric__value"><?= (int) $counts['admins'] ?></div>
@@ -259,6 +260,7 @@ $content = ob_get_clean();
 
 $view = [
     'title' => 'Admin - Dashboard',
+    'heading' => 'Tableau de bord',
     'active' => '',
     'content' => $content,
     'flash' => $flash ?? [],

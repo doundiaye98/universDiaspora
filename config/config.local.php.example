@@ -6,6 +6,12 @@ declare(strict_types=1);
  * config.local.php est ignoré par Git (.gitignore).
  */
 return [
+    // 'app' => [
+    //     'base_url' => 'https://www.exemple.fr/chemin-du-site',
+    //     // Par défaut les fichiers statiques sont en …/public/assets/…
+    //     // Si le vhost pointe déjà sur le dossier public/, décommentez la ligne suivante :
+    //     // 'assets_public_prefix' => '',
+    // ],
     'db' => [
         'pass' => 'root',
     ],

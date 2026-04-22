@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$services = require __DIR__ . '/../data/services.php';
+$services = function_exists('services_all') ? services_all() : (require __DIR__ . '/../data/services.php');
 $config = require __DIR__ . '/../config/config.php';
 $baseUrl = rtrim($config['app']['base_url'], '/');
 
@@ -18,9 +18,9 @@ $progress = $hasPicked ? 66 : 33;
 
 ob_start();
 ?>
-<section class="ud-start-hero">
-  <div class="container">
-    <nav aria-label="Fil d’ariane" class="ud-breadcrumb">
+<section class="ud-start-hero ud-page-demarrer py-3 py-md-4 py-lg-5">
+  <div class="container px-3 px-sm-4">
+    <nav aria-label="Fil d’Ariane" class="ud-breadcrumb mb-3">
       <a href="<?= h($baseUrl) ?>/">Accueil</a>
       <span class="ud-breadcrumb__sep">/</span>
       <span>Démarrer maintenant</span>
@@ -28,8 +28,8 @@ ob_start();
 
     <div class="ud-start-hero__card" data-progress="<?= (int) $progress ?>">
       <div class="ud-start-hero__kicker">Démarrer maintenant</div>
-      <h1 class="ud-start-hero__title mb-2">On lance ton projet en 3 minutes</h1>
-      <div class="ud-start-hero__subtitle">Choisis un service, explique ton besoin, et on te recontacte rapidement.</div>
+      <h1 class="ud-start-hero__title mb-2">Lancez votre projet en quelques minutes</h1>
+      <div class="ud-start-hero__subtitle">Choisissez un service, décrivez votre besoin : nous vous recontactons rapidement.</div>
 
       <div class="ud-stepper mt-4" aria-label="Progression">
         <div class="ud-stepper__bar" role="progressbar" aria-valuemin="0" aria-valuenow="<?= (int) $progress ?>" aria-valuemax="100">
@@ -47,37 +47,43 @@ ob_start();
           <div class="ud-start-step__num">1</div>
           <div>
             <div class="ud-start-step__title">Choisir</div>
-            <div class="ud-start-step__text">Sélectionne le service qui t’intéresse.</div>
+            <div class="ud-start-step__text">Sélectionnez le service qui vous intéresse.</div>
           </div>
         </a>
         <a class="ud-start-step<?= $hasPicked ? ' is-done' : '' ?>" href="#step-2" data-step="2">
           <div class="ud-start-step__num">2</div>
           <div>
             <div class="ud-start-step__title">Décrire</div>
-            <div class="ud-start-step__text">Donne les infos essentielles (objectif, pays, délais…).</div>
+            <div class="ud-start-step__text">Indiquez les informations essentielles (objectif, pays, délais…).</div>
           </div>
         </a>
         <a class="ud-start-step" href="#step-3" data-step="3">
           <div class="ud-start-step__num">3</div>
           <div>
             <div class="ud-start-step__title">Envoyer</div>
-            <div class="ud-start-step__text">On analyse et on te propose une solution claire.</div>
+            <div class="ud-start-step__text">Nous analysons votre demande et vous proposons une solution claire.</div>
           </div>
         </a>
       </div>
     </div>
+
+    <div class="ud-about-highlight mt-4 mb-0">
+      <p class="ud-about-highlight__lead mb-0">
+        En trois étapes simples, vous structurez votre demande : nous savons déjà quel service vous intéresse et pouvons vous répondre plus vite.
+      </p>
+    </div>
   </div>
 </section>
 
-<section class="py-5">
-  <div class="container">
+<section class="ud-page-body py-5">
+  <div class="container px-3 px-sm-4">
     <div class="row g-4">
       <div class="col-12 col-lg-7">
         <div id="step-1" class="ud-surface ud-step-section" data-step-section="1">
           <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
             <div>
-              <h2 class="h5 mb-1">1) Choisis ton service</h2>
-              <div class="text-muted small">Clique sur une carte pour sélectionner.</div>
+              <h2 class="h5 mb-1">1) Choisissez votre service</h2>
+              <div class="text-muted small">Cliquez sur une carte pour sélectionner.</div>
             </div>
             <?php if ($service): ?>
               <span class="ud-pill ud-pill--soon" style="border-style:solid;">Sélectionné</span>
@@ -89,10 +95,13 @@ ob_start();
               <?php
                 $href = $baseUrl . '/?page=demarrer-maintenant&service=' . urlencode((string)$s['slug']);
                 $isSelected = ($selected !== '' && $selected === ($s['slug'] ?? ''));
+                $pickIconSrc = function_exists('service_icon_url')
+                  ? service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))
+                  : ud_public_asset_url('img/' . basename((string)($s['icon'] ?? '')), $baseUrl);
               ?>
               <div class="col-12 col-sm-6">
                 <a class="ud-pick<?= $isSelected ? ' is-selected' : '' ?>" href="<?= h($href) ?>">
-                  <img src="<?= h($baseUrl) ?>/public/assets/img/<?= h($s['icon']) ?>" alt="" width="40" height="40">
+                  <img src="<?= h($pickIconSrc) ?>" alt="" width="40" height="40">
                   <div class="ud-pick__text">
                     <div class="ud-pick__title"><?= h($s['title']) ?></div>
                     <div class="ud-pick__meta"><?= !empty($s['coming_soon']) ? 'Bientôt disponible' : 'Disponible' ?></div>
@@ -105,8 +114,8 @@ ob_start();
         </div>
 
         <div id="step-2" class="ud-surface mt-4 ud-step-section" data-step-section="2">
-          <h2 class="h5 mb-2">2) Prépare ton message</h2>
-          <div class="text-muted small mb-3">Copie/colle ce modèle dans le formulaire pour aller plus vite.</div>
+          <h2 class="h5 mb-2">2) Préparez votre message</h2>
+          <div class="text-muted small mb-3">Copiez-collez ce modèle dans le formulaire pour aller plus vite.</div>
 
           <?php
             $template = "Bonjour Univers Diaspora,\n\n";
@@ -120,29 +129,41 @@ ob_start();
           ?>
 
           <textarea class="form-control" rows="10" readonly><?= h($template) ?></textarea>
-          <div class="small text-muted mt-2">Astuce: clique dans la zone puis Ctrl+A / Ctrl+C.</div>
+          <div class="small text-muted mt-2">Astuce : cliquez dans la zone puis Ctrl+A / Ctrl+C.</div>
         </div>
       </div>
 
       <div class="col-12 col-lg-5">
         <div id="step-3" class="ud-surface ud-cta-box ud-step-section" data-step-section="3">
-          <div class="ud-cta-box__title">3) Envoie-nous le message</div>
-          <div class="ud-cta-box__text">Tu seras redirigé vers le formulaire de contact.</div>
+          <div class="ud-cta-box__title">3) Envoyez-nous le message</div>
+          <div class="ud-cta-box__text">Vous serez redirigé vers le formulaire de contact.</div>
           <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine mt-3" href="<?= h($baseUrl) ?>/#contact">
             Aller au formulaire <span class="ud-arrow" aria-hidden="true">→</span>
           </a>
-          <div class="ud-cta-box__hint mt-2">Pense à coller le modèle de message si besoin.</div>
+          <div class="ud-cta-box__hint mt-2">Pensez à coller le modèle de message si besoin.</div>
         </div>
 
         <div class="ud-surface mt-3">
-          <div class="ud-contact-card__title">Ce qu’on te demandera</div>
+          <div class="ud-contact-card__title">Ce que nous vous demanderons</div>
           <ul class="ud-service-hero__list">
-            <li>Ton nom et ton email</li>
+            <li>Votre nom et votre e-mail</li>
             <li>Le service concerné</li>
             <li>Les détails utiles (pays, délais…)</li>
-            <li>Ton numéro (optionnel)</li>
+            <li>Votre numéro (optionnel)</li>
           </ul>
         </div>
+      </div>
+    </div>
+
+    <div class="ud-about-cta ud-surface text-center mt-4 mt-lg-5">
+      <h2 class="ud-about-cta__title mb-2">Une question avant de continuer ?</h2>
+      <p class="ud-about-cta__text mx-auto mb-4">
+        Consultez nos fiches services ou écrivez-nous : nous vous orientons vers la bonne offre.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#services">Voir les services</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#contact">Contact</a>
       </div>
     </div>
   </div>

@@ -21,10 +21,18 @@ if ($service === null) {
     $title = 'Page introuvable';
     ob_start();
     ?>
-    <div class="container py-5">
-      <h1 class="h4 mb-3">Page introuvable</h1>
-      <a class="btn btn-primary" href="<?= h($baseUrl) ?>/">Retour à l’accueil</a>
-    </div>
+    <section class="ud-service-page ud-service-page--notfound py-5">
+      <div class="container px-3 px-sm-4 py-5 text-center">
+        <h1 class="ud-service-page__title mb-3">Page introuvable</h1>
+        <p class="text-muted mb-4" style="max-width: 26rem; margin-left: auto; margin-right: auto;">
+          Ce service n’existe pas ou n’est plus disponible.
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+          <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/">Accueil</a>
+          <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#services">Services</a>
+        </div>
+      </div>
+    </section>
     <?php
     $content = ob_get_clean();
     $view = [
@@ -41,7 +49,7 @@ $title = $service['title'] ?? 'Service';
 $currentSlug = (string)($service['slug'] ?? '');
 $description = (string)($service['description'] ?? 'Un accompagnement clair, rapide et sur‑mesure.');
 $serviceSteps = service_steps_for_display($service);
-$iconSrc = service_icon_url((string)($service['icon'] ?? ''), $baseUrl);
+$iconSrc = service_icon_url((string)($service['icon'] ?? ''), $baseUrl, $currentSlug);
 
 $otherServices = array_values(array_filter($services, static function (array $s) use ($currentSlug): bool {
     return ($s['slug'] ?? '') !== $currentSlug;
@@ -49,119 +57,94 @@ $otherServices = array_values(array_filter($services, static function (array $s)
 
 ob_start();
 ?>
-<section class="ud-service-hero">
-  <div class="container">
-    <nav aria-label="Fil d’ariane" class="ud-breadcrumb">
-      <a href="<?= h($baseUrl) ?>/">Accueil</a>
-      <span class="ud-breadcrumb__sep">/</span>
-      <span><?= h($title) ?></span>
-    </nav>
+<section class="ud-service-page ud-service-page__hero">
+  <div class="container px-3 px-sm-4 py-4 py-md-5">
+    <p class="ud-service-page__back mb-4">
+      <a class="text-decoration-none" href="<?= h($baseUrl) ?>/#services">← Tous les services</a>
+    </p>
 
-    <div class="ud-service-hero__grid">
-      <div class="ud-service-hero__left">
-        <div class="ud-service-hero__badge">
-          <img src="<?= h($iconSrc) ?>" alt="<?= h($title) ?>" width="64" height="64">
-        </div>
-        <div>
-          <h1 class="ud-service-hero__title mb-2"><?= h($title) ?></h1>
-          <div class="ud-service-hero__subtitle"><?= h($description) ?></div>
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Demander un devis</a>
-            <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#services">Voir tous les services</a>
-          </div>
+    <header class="ud-service-page__head">
+      <div class="ud-service-page__icon-wrap">
+        <img class="ud-service-page__icon" src="<?= h($iconSrc) ?>" alt="" width="56" height="56" decoding="async">
+      </div>
+      <div class="ud-service-page__intro">
+        <h1 class="ud-service-page__title"><?= h($title) ?></h1>
+        <p class="ud-service-page__lead"><?= h($description) ?></p>
+        <div class="ud-service-page__actions">
+          <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Contact</a>
+          <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl . '/?page=demarrer-maintenant&service=' . rawurlencode($currentSlug)) ?>">Démarrer</a>
         </div>
       </div>
+    </header>
 
-      <div class="ud-service-hero__right">
-        <div class="ud-service-hero__card">
-          <div class="ud-service-hero__card-title">Ce que nous proposons</div>
-          <ul class="ud-service-hero__list">
-            <?php foreach (($service['bullets'] ?? []) as $b): ?>
-              <li><?= h($b) ?></li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      </div>
-    </div>
+    <?php
+    $bullets = $service['bullets'] ?? [];
+    if (!empty($bullets)):
+        ?>
+      <ul class="ud-service-page__bullets">
+        <?php foreach ($bullets as $b): ?>
+          <li><?= h($b) ?></li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
   </div>
 </section>
 
-<section class="ud-service-body py-5">
-  <div class="container">
-    <div class="row g-4">
-      <div class="col-12 col-lg-7">
-        <div class="ud-surface">
-          <h2 class="h5 mb-3">Comment ça se passe</h2>
-          <div class="ud-steps">
-            <?php foreach ($serviceSteps as $idx => $st): ?>
-              <div class="ud-step">
-                <div class="ud-step__num"><?= (int)($idx + 1) ?></div>
-                <div>
-                  <div class="ud-step__title"><?= h((string)($st['title'] ?? '')) ?></div>
-                  <div class="ud-step__text"><?= h((string)($st['text'] ?? '')) ?></div>
-                </div>
-              </div>
-            <?php endforeach; ?>
+<section class="ud-service-page__body">
+  <div class="container px-3 px-sm-4 py-4 py-lg-5">
+    <h2 class="ud-service-page__h2">Déroulement</h2>
+    <ol class="ud-service-page__steps">
+      <?php foreach ($serviceSteps as $idx => $st): ?>
+        <li class="ud-service-page__step">
+          <span class="ud-service-page__step-num"><?= (int)($idx + 1) ?></span>
+          <div>
+            <strong class="d-block mb-1"><?= h((string)($st['title'] ?? '')) ?></strong>
+            <span class="text-muted"><?= h((string)($st['text'] ?? '')) ?></span>
           </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-lg-5">
-        <div class="ud-surface ud-cta-box">
-          <div class="ud-cta-box__title">Parlons de votre projet</div>
-          <div class="ud-cta-box__text">Réponse rapide. Vous pouvez détailler votre besoin via le formulaire.</div>
-          <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine mt-3" href="<?= h($baseUrl) ?>/#contact">
-            Contacter Univers Diaspora <span class="ud-arrow" aria-hidden="true">→</span>
-          </a>
-          <div class="ud-cta-box__hint mt-2">Vous serez redirigé vers le formulaire de contact de l’accueil.</div>
-        </div>
-      </div>
-    </div>
+        </li>
+      <?php endforeach; ?>
+    </ol>
 
     <?php
     $detailsRaw = trim((string)($service['details'] ?? ''));
     if ($detailsRaw !== ''):
         $detailsHtml = !empty($service['details_is_html']);
         ?>
-      <div class="mt-4 ud-surface">
-        <h2 class="h5 mb-3">Détails</h2>
+      <div class="ud-service-page__details mt-4 pt-4 border-top">
+        <h2 class="ud-service-page__h2">Détails</h2>
         <?php if ($detailsHtml): ?>
-          <div class="ud-about-p ud-about-p--html">
+          <div class="ud-about-p ud-about-p--html ud-service-page__details-inner">
             <?= services_sanitize_details_html($detailsRaw) ?>
           </div>
         <?php else: ?>
-          <div class="ud-about-p">
+          <div class="ud-about-p ud-service-page__details-inner">
             <?= nl2br(h($detailsRaw)) ?>
           </div>
         <?php endif; ?>
       </div>
     <?php endif; ?>
 
-    <div class="ud-related mt-5">
-      <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
-        <div>
-          <div class="ud-related__kicker">Explorer</div>
-          <div class="ud-related__title">Autres services</div>
-        </div>
-        <a class="small fw-bold text-decoration-none" href="<?= h($baseUrl) ?>/#services">Tous les services →</a>
-      </div>
+    <p class="ud-service-page__cta-line mt-4 pt-4 mb-0">
+      <a class="btn btn-primary ud-btn" href="<?= h($baseUrl) ?>/#contact">Écrire — formulaire</a>
+      <a class="btn btn-link text-decoration-none" href="<?= h($baseUrl) ?>/?page=rendez-vous">Rendez-vous</a>
+    </p>
 
-      <div class="row g-3">
-        <?php foreach (array_slice($otherServices, 0, 6) as $s): ?>
-          <?php $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug'])); ?>
-          <div class="col-12 col-sm-6 col-lg-4">
-            <a class="ud-related-card" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-              <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl)) ?>" alt="" width="40" height="40">
-              <div class="ud-related-card__text">
-                <div class="ud-related-card__title"><?= h($s['title']) ?></div>
-                <div class="ud-related-card__meta">Découvrir</div>
-              </div>
-              <span class="ud-related-card__arrow" aria-hidden="true">→</span>
-            </a>
-          </div>
-        <?php endforeach; ?>
+    <?php if (!empty($otherServices)): ?>
+      <div class="ud-service-page__related mt-5 pt-4 border-top">
+        <h2 class="ud-service-page__h2 ud-service-page__h2--small">Autres services</h2>
+        <div class="row g-2 g-md-3">
+          <?php foreach (array_slice($otherServices, 0, 6) as $s): ?>
+            <?php $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug'])); ?>
+            <div class="col-6 col-md-4">
+              <a class="ud-service-page__related-link" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) ?>" alt="" width="32" height="32" loading="lazy">
+                <span><?= h($s['title']) ?></span>
+              </a>
+            </div>
+          <?php endforeach; ?>
+        </div>
       </div>
-    </div>
+    <?php endif; ?>
   </div>
 </section>
 <?php
@@ -177,4 +160,3 @@ $view = [
 ];
 
 require __DIR__ . '/_layout.php';
-

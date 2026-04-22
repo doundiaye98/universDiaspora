@@ -51,16 +51,14 @@ if (!empty($errors) && (int)($form['id'] ?? 0) > 0) {
 }
 
 $photoFile = isset($form['photo']) && is_string($form['photo']) && $form['photo'] !== '' ? $form['photo'] : null;
-$photoUrl = $photoFile !== null ? ($baseUrl . '/public/assets/img/team/' . rawurlencode($photoFile)) : null;
+$photoUrl = $photoFile !== null ? ud_public_asset_url('img/team/' . basename($photoFile), $baseUrl) : null;
 
 ob_start();
 ?>
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
   <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-end justify-content-between gap-3 mb-3">
     <div class="min-w-0">
-      <div class="ud-admin-kicker">Site public</div>
-      <h1 class="ud-admin-title mb-0">Équipe</h1>
-      <div class="ud-admin-sub">Membres affichés sur la page « Notre équipe » (photo professionnelle, poste, texte).</div>
+      <p class="ud-admin-page-lead text-muted mb-0">Membres sur la page « Notre équipe » : photo, poste, texte.</p>
     </div>
     <div class="d-flex flex-wrap gap-2 flex-shrink-0">
       <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="./?page=equipe" target="_blank" rel="noopener">Voir la page publique</a>
@@ -93,7 +91,7 @@ ob_start();
                   <tr>
                     <td class="text-nowrap" style="width:56px;">
                       <?php if (!empty($row['photo'])): ?>
-                        <img src="<?= h($baseUrl) ?>/public/assets/img/team/<?= h(basename((string)$row['photo'])) ?>" alt="" width="44" height="44" class="rounded-3 object-fit-cover" style="object-fit:cover;width:44px;height:44px;">
+                        <img src="<?= h(ud_public_asset_url('img/team/' . basename((string)$row['photo']), $baseUrl)) ?>" alt="" width="44" height="44" class="rounded-3 object-fit-cover" style="object-fit:cover;width:44px;height:44px;">
                       <?php else: ?>
                         <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-light text-muted small" style="width:44px;height:44px;">—</span>
                       <?php endif; ?>
@@ -182,7 +180,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'Admin — Équipe',
+    'title' => 'Admin - Équipe',
+    'heading' => 'Équipe',
     'content' => $content,
     'flash' => $flash ?? [],
 ];

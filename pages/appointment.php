@@ -15,33 +15,59 @@ $errors = $errors ?? [];
 
 ob_start();
 ?>
-<section class="ud-appt-hero">
-  <div class="container">
-    <nav aria-label="Fil d’ariane" class="ud-breadcrumb">
+<section class="ud-appt-hero ud-page-rdv py-3 py-md-4 py-lg-5">
+  <div class="container px-3 px-sm-4">
+    <nav aria-label="Fil d’Ariane" class="ud-breadcrumb mb-3">
       <a href="<?= h($baseUrl) ?>/">Accueil</a>
       <span class="ud-breadcrumb__sep">/</span>
       <span>Rendez-vous</span>
     </nav>
 
-    <div class="ud-surface ud-appt-card">
+    <div class="ud-surface ud-appt-card mb-4 mb-lg-5">
       <div class="ud-section-title text-center">
-        <div class="ud-section-kicker">Rendez-vous</div>
+        <div class="ud-section-kicker">Univers Diaspora</div>
         <h1 class="ud-title mb-2">Prenez rendez‑vous</h1>
-        <div class="ud-subtitle">Choisissez un bureau, une date et une heure. Nous confirmons rapidement.</div>
+        <div class="ud-subtitle mx-auto" style="max-width: 36rem;">
+          Choisissez l’un de nos trois bureaux, une date et une créneau horaire. Nous vous confirmons rapidement votre passage.
+        </div>
         <div class="ud-section-divider mt-3" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="ud-about-statband row g-3 g-md-4 mb-0">
+      <div class="col-12 col-md-4">
+        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
+          <div class="ud-about-stat__label">Paris 18ᵉ</div>
+          <div class="ud-about-stat__value">Rue Richomme</div>
+          <p class="ud-about-stat__hint mb-0">Accueil sur rendez-vous, au cœur du 18ᵉ arrondissement.</p>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
+          <div class="ud-about-stat__label">Paris 17ᵉ</div>
+          <div class="ud-about-stat__value">Rue des Moines</div>
+          <p class="ud-about-stat__hint mb-0">Deuxième lieu parisien pour se rapprocher de vous.</p>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
+          <div class="ud-about-stat__label">Colombes</div>
+          <div class="ud-about-stat__value">92700</div>
+          <p class="ud-about-stat__hint mb-0">Bureau en proche banlieue ouest, facile d’accès.</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="py-5">
-  <div class="container">
+<section class="ud-page-body py-5">
+  <div class="container px-3 px-sm-4">
     <div class="row g-4">
       <div class="col-12 col-lg-7">
         <form class="ud-form ud-appt-form" method="post" action="<?= h($baseUrl) ?>/?action=appointment">
           <div class="ud-form__head mb-3">
             <div class="ud-form__title">Demande de rendez‑vous</div>
-            <div class="ud-form__subtitle">Remplissez les informations ci‑dessous.</div>
+            <div class="ud-form__subtitle">Remplissez les informations ci‑dessous. Les champs marqués d’un astérisque sont obligatoires.</div>
           </div>
 
           <div class="row g-3">
@@ -106,12 +132,32 @@ ob_start();
       </div>
 
       <div class="col-12 col-lg-5">
-        <div class="ud-surface ud-cta-box">
-          <div class="ud-cta-box__title">Informations</div>
-          <div class="ud-cta-box__text">Après envoi, nous vous contactons pour confirmer le rendez‑vous.</div>
-          <div class="ud-cta-box__hint mt-2">Astuce: indiquez l’objet de votre demande dans le message.</div>
-          <a class="btn btn-outline-primary ud-btn ud-btn--wide ud-btn--ghost mt-3" href="<?= h($baseUrl) ?>/#contact">Ou nous écrire</a>
+        <div class="ud-surface ud-cta-box mb-3">
+          <div class="ud-cta-box__title">Après votre envoi</div>
+          <div class="ud-cta-box__text">Nous vous contactons par téléphone ou e-mail pour confirmer le créneau et préparer votre rendez‑vous.</div>
+          <div class="ud-cta-box__hint mt-2">Indiquez dans le message l’objet de votre venue (conseil, dossier administratif, etc.).</div>
+          <a class="btn btn-outline-primary ud-btn ud-btn--wide ud-btn--ghost mt-3" href="<?= h($baseUrl) ?>/#contact">Écrire via le formulaire</a>
         </div>
+        <div class="ud-surface">
+          <div class="ud-contact-card__title mb-2">Bon à savoir</div>
+          <ul class="ud-service-hero__list mb-0">
+            <li>Prévoyez une pièce d’identité si un dossier officiel est à traiter sur place.</li>
+            <li>Vous pouvez joindre des documents après notre premier échange par e-mail.</li>
+            <li>Pour un premier contact rapide, le <a href="<?= h($baseUrl) ?>/?page=demarrer-maintenant">parcours « Démarrer maintenant »</a> est aussi disponible.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="ud-about-cta ud-surface text-center mt-4 mt-lg-5">
+      <h2 class="ud-about-cta__title mb-2">Découvrir l’agence</h2>
+      <p class="ud-about-cta__text mx-auto mb-4">
+        Notre équipe, nos engagements et l’ensemble de nos services sont présentés sur le site.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/?page=equipe">Notre équipe</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#services">Services</a>
       </div>
     </div>
   </div>
@@ -121,7 +167,7 @@ $content = ob_get_clean();
 
 $view = [
     'title' => 'Rendez-vous — Univers Diaspora',
-    'meta_description' => 'Prenez rendez-vous avec Univers Diaspora : choix du bureau, date et coordonnées pour une prise en charge rapide.',
+    'meta_description' => 'Prenez rendez-vous avec Univers Diaspora : Paris 18ᵉ, Paris 17ᵉ ou Colombes — confirmation rapide et accompagnement personnalisé.',
     'active' => '',
     'content' => $content,
     'flash' => $flash ?? [],
@@ -130,4 +176,3 @@ $view = [
 ];
 
 require __DIR__ . '/_layout.php';
-

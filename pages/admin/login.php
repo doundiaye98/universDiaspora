@@ -15,14 +15,14 @@ ob_start();
       <div class="col-12 col-md-8 col-lg-5">
         <div class="ud-admin-card">
           <div class="ud-admin-brand">
-            <img src="<?= h($baseUrl) ?>/public/assets/img/logo-univers-diaspora.jpg" alt="Univers Diaspora" width="54" height="54">
+            <img src="<?= h(ud_public_asset_url('img/logo-univers-diaspora.jpg', $baseUrl)) ?>" alt="Univers Diaspora" width="54" height="54">
             <div>
               <div class="ud-admin-brand__title">Admin</div>
               <div class="ud-admin-brand__sub">Univers Diaspora</div>
             </div>
           </div>
 
-          <form class="mt-4" method="post" action="?action=admin-login">
+          <form class="mt-4" method="post" action="<?= h($baseUrl) ?>/?action=admin-login">
             <div class="mb-3">
               <label class="form-label">Utilisateur</label>
               <input class="form-control <?= isset($errors['username']) ? 'is-invalid' : '' ?>" name="username" value="<?= h($old['username'] ?? '') ?>" autocomplete="username" required>

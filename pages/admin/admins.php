@@ -17,9 +17,7 @@ ob_start();
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
   <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3">
     <div class="min-w-0">
-      <div class="ud-admin-kicker">Gestion</div>
-      <h1 class="ud-admin-title mb-0">Administrateurs</h1>
-      <div class="ud-admin-sub">Ajouter des admins, activer/désactiver, reset mot de passe.</div>
+      <p class="ud-admin-page-lead text-muted mb-0">Comptes admin : création, activation et réinitialisation du mot de passe.</p>
     </div>
   </div>
 
@@ -99,6 +97,7 @@ $content = ob_get_clean();
 
 $view = [
     'title' => 'Admin - Administrateurs',
+    'heading' => 'Administrateurs',
     'content' => $content,
     'flash' => $flash ?? [],
 ];

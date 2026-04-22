@@ -56,7 +56,7 @@ ob_start();
           if ($initials === '') {
               $initials = '?';
           }
-          $imgSrc = $photo !== null ? ($baseUrl . '/public/assets/img/team/' . rawurlencode($photo)) : null;
+          $imgSrc = $photo !== null ? ud_public_asset_url('img/team/' . basename($photo), $baseUrl) : null;
         ?>
         <div class="col-12 col-sm-6 col-xl-4">
           <article class="ud-team-card ud-surface h-100 d-flex flex-column">
@@ -85,9 +85,17 @@ ob_start();
       <p class="text-center text-muted py-5">L’équipe sera présentée prochainement.</p>
     <?php endif; ?>
 
-    <div class="text-center mt-5">
-      <a class="btn btn-outline-primary ud-btn ud-btn--ghost me-2 mb-2" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
-      <a class="btn btn-primary ud-btn ud-btn--cta mb-2" href="<?= h($baseUrl) ?>/#contact">Nous contacter</a>
+    <div class="ud-about-cta ud-surface text-center mt-4 mt-lg-5">
+      <h2 class="ud-about-cta__title mb-2">Travailler avec Univers Diaspora</h2>
+      <p class="ud-about-cta__text mx-auto mb-4">
+        En savoir plus sur notre mission, explorer nos services ou prendre directement contact avec l’équipe.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Nous contacter</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#services">Nos services</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=demarrer-maintenant">Démarrer un projet</a>
+      </div>
     </div>
   </div>
 </section>

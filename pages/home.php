@@ -7,15 +7,14 @@ $baseUrl = rtrim($config['app']['base_url'], '/');
 
 ob_start();
 ?>
-<div class="ud-hero-wrap" style="--ud-hero-bg: url('<?= h($baseUrl) ?>/public/assets/img/arriereplan.png');">
+<div class="ud-hero-wrap" style="--ud-hero-bg: url('<?= h(ud_public_asset_url('img/arriereplan.png', $baseUrl)) ?>');">
 <section class="ud-hero">
   <div class="container">
     <div class="row align-items-center g-4">
       <div class="col-12 col-lg-6">
-        <div class="ud-hero__kicker">GROUPE YOMBAL</div>
         <h1 class="ud-hero__headline mb-3"><span class="ud-hero__brand">Univers Diaspora</span></h1>
         <p class="ud-hero__tagline mb-4">
-          L’agence <strong>Univers Diaspora</strong> vous conseille et vous accompagne pour la réalisation de vos projets, en France et à l’international.
+          L’agence <strong>Univers Diaspora</strong> vous conseille et vous accompagne pour la réalisation de vos projets.
         </p>
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-primary ud-btn ud-btn--cta" href="#services">Découvrir nos services</a>
@@ -23,7 +22,7 @@ ob_start();
         </div>
       </div>
       <div class="col-12 col-lg-6 text-center">
-        <img class="ud-hero__logo img-fluid" src="<?= h($baseUrl) ?>/public/assets/img/entete-univers-diasporas.png" alt="Univers Diaspora">
+        <img class="ud-hero__logo img-fluid" src="<?= h(ud_public_asset_url('img/entete-univers-diasporas.png', $baseUrl)) ?>" alt="Univers Diaspora">
       </div>
     </div>
   </div>
@@ -33,10 +32,10 @@ ob_start();
   <div class="container">
     <div class="row align-items-center g-4">
       <div class="col-12 col-lg-4 text-center">
-        <img class="img-fluid" src="<?= h($baseUrl) ?>/public/assets/img/diasporas-bulles.png" alt="">
+        <img class="img-fluid" src="<?= h(ud_public_asset_url('img/diasporas-bulles.png', $baseUrl)) ?>" alt="">
       </div>
       <div class="col-12 col-lg-8 text-center text-lg-end">
-        <img class="img-fluid ud-hero-images__screen" src="<?= h($baseUrl) ?>/public/assets/img/diasporas-ordi-droit.jpg" alt="">
+        <img class="img-fluid ud-hero-images__screen" src="<?= h(ud_public_asset_url('img/diasporas-ordi-droit.jpg', $baseUrl)) ?>" alt="">
       </div>
     </div>
   </div>
@@ -73,51 +72,63 @@ ob_start();
               <div class="ud-stat__label">accompagnement</div>
             </div>
             <div class="ud-stat">
-              <div class="ud-stat__num ud-stat__num--text">France &amp; international</div>
-              <div class="ud-stat__label">intervention</div>
+              <div class="ud-stat__num ud-stat__num--text">À votre écoute</div>
+              <div class="ud-stat__label">proximité</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row g-4">
-      <?php foreach ($services as $s): ?>
-        <?php
-          $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
-        ?>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="ud-service-card h-100 ud-reveal" data-reveal-index="<?= (int)($s['sort_order'] ?? 0) ?>">
-            <div class="ud-service-card__top">
-              <a class="ud-service-card__icon" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?> aria-label="<?= h($s['title']) ?>">
-                <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl)) ?>" alt="<?= h($s['title']) ?>">
-              </a>
-              <?php if (!empty($s['coming_soon'])): ?>
-                <span class="ud-pill ud-pill--soon">Bientôt</span>
-              <?php endif; ?>
+    <div
+      class="ud-services-carousel"
+      id="udServicesCarousel"
+      data-interval="4000"
+      role="region"
+      aria-roledescription="carrousel"
+      aria-label="Nos services"
+    >
+      <div
+        class="ud-services-carousel__viewport"
+        id="udServicesViewport"
+        tabindex="0"
+      >
+        <div class="ud-services-carousel__track" id="udServicesTrack">
+          <?php foreach ($services as $s): ?>
+            <?php
+              $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
+            ?>
+            <div class="ud-services-carousel__slide">
+              <article class="ud-service-card ud-service-card--modern ud-service-card--visual-only ud-service-card--carousel h-100<?= !empty($s['coming_soon']) ? ' ud-service-card--soon' : '' ?>" aria-label="<?= h($s['title']) ?>">
+                <div class="ud-service-card__accent" aria-hidden="true"></div>
+                <?php if (!empty($s['coming_soon'])): ?>
+                  <span class="ud-service-card__badge ud-pill ud-pill--soon">Bientôt</span>
+                <?php endif; ?>
+                <div class="ud-service-card__inner">
+                  <div class="ud-service-card__visual">
+                    <img class="ud-service-card__visual-img" src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) ?>" alt="" loading="lazy" decoding="async">
+                  </div>
+                  <div class="ud-service-card__home-head">
+                    <h3 class="ud-service-card__home-title"><?= h($s['title']) ?></h3>
+                  </div>
+                  <div class="ud-service-card__footer">
+                    <?php if (!empty($s['coming_soon'])): ?>
+                      <div class="ud-badge">En cours de création</div>
+                    <?php else: ?>
+                      <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine ud-service-card__cta" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                        Découvrir <span class="ud-arrow" aria-hidden="true">→</span>
+                      </a>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </article>
             </div>
-
-            <div class="ud-service-card__body">
-              <div class="ud-service-card__title"><?= h($s['title']) ?></div>
-              <ul class="ud-service-card__list">
-                <?php foreach ($s['bullets'] as $b): ?>
-                  <li><?= h($b) ?></li>
-                <?php endforeach; ?>
-              </ul>
-            </div>
-
-            <div class="ud-service-card__footer">
-              <?php if (!empty($s['coming_soon'])): ?>
-                <div class="ud-badge">EN COURS DE CREATION</div>
-              <?php else: ?>
-                <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                  Découvrir <span class="ud-arrow" aria-hidden="true">→</span>
-                </a>
-              <?php endif; ?>
-            </div>
-          </div>
+          <?php endforeach; ?>
         </div>
-      <?php endforeach; ?>
+      </div>
+      <div class="ud-services-carousel__nav">
+        <div class="ud-services-carousel__dots" id="udServicesDots" aria-label="Index des services"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -195,7 +206,7 @@ ob_start();
             <div class="ud-contact-card__title">Ou directement</div>
             <div class="ud-contact-mini mb-2">
               <div class="ud-contact-mini__label">Email</div>
-              <div class="ud-contact-mini__value">contact@universdiaspora.com</div>
+              <div class="ud-contact-mini__value"><a href="mailto:contact@universdiaspora.com">contact@universdiaspora.com</a></div>
             </div>
             <div class="ud-contact-mini mb-3">
               <div class="ud-contact-mini__label">Horaires</div>
@@ -224,7 +235,7 @@ ob_start();
 
           <div class="ud-surface ud-cta-box">
             <div class="ud-cta-box__title">Besoin d’un accompagnement rapide ?</div>
-            <div class="ud-cta-box__text">Clique et envoie-nous ton message, on s’occupe du reste.</div>
+            <div class="ud-cta-box__text">Envoyez-nous un message : nous nous occupons du reste.</div>
             <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine mt-3" href="<?= h($baseUrl) ?>/?page=demarrer-maintenant">
               Démarrer maintenant <span class="ud-arrow" aria-hidden="true">→</span>
             </a>
@@ -238,7 +249,7 @@ ob_start();
       <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-2">
         <div>
           <div class="ud-contact-card__title mb-0">Carte des bureaux</div>
-          <div class="small text-muted">Clique sur un marqueur pour voir l’adresse.</div>
+          <div class="small text-muted">Utilise l’icône des calques (en haut à droite) pour passer entre plan, carte OSM et vue aérienne. Clique sur un marqueur pour l’adresse.</div>
         </div>
       </div>
       <?php
@@ -274,20 +285,119 @@ ob_start();
 <?php if (true): ?>
 <script>
 (() => {
-  const cards = document.querySelectorAll('.ud-service-card.ud-reveal');
-  if (!cards.length) return;
+  const root = document.getElementById('udServicesCarousel');
+  const viewport = document.getElementById('udServicesViewport');
+  const dotsHost = document.getElementById('udServicesDots');
+  if (!root || !viewport || !dotsHost) return;
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) {
-        const el = e.target;
-        el.classList.add('is-inview');
-        io.unobserve(el);
-      }
+  const slides = viewport.querySelectorAll('.ud-services-carousel__slide');
+  if (!slides.length) return;
+
+  const intervalMs = Math.max(2200, parseInt(String(root.getAttribute('data-interval') || '4000'), 10) || 4000);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const behavior = reduced ? 'auto' : 'smooth';
+
+  let index = 0;
+  let timer = null;
+  let dotEls = [];
+
+  /** Aligne le bord gauche de la carte au bord gauche du carrousel (pas de vide avant la 1re carte). */
+  const scrollToSlide = (i) => {
+    const slide = slides[i];
+    if (!slide) return;
+    const left = slide.offsetLeft;
+    viewport.scrollTo({ left: Math.max(0, left), behavior });
+  };
+
+  const setDots = () => {
+    dotEls.forEach((d, k) => d.classList.toggle('is-active', k === index));
+  };
+
+  const goTo = (i) => {
+    index = (i + slides.length) % slides.length;
+    scrollToSlide(index);
+    setDots();
+  };
+
+  const next = () => goTo(index + 1);
+
+  const stop = () => {
+    if (timer !== null) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  /** Défilement automatique tant qu’au moins 2 services (même si « réduire les animations » : défilement instantané). */
+  const start = () => {
+    stop();
+    if (slides.length < 2) return;
+    if (document.hidden) return;
+    timer = window.setInterval(next, intervalMs);
+  };
+
+  slides.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ud-services-carousel__dot';
+    b.setAttribute('aria-label', 'Afficher le service ' + (i + 1));
+    b.addEventListener('click', () => {
+      goTo(i);
+      stop();
+      window.setTimeout(start, intervalMs);
     });
-  }, { threshold: 0.18 });
+    dotsHost.appendChild(b);
+    dotEls.push(b);
+  });
+  setDots();
 
-  cards.forEach((c) => io.observe(c));
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) start();
+        else stop();
+      });
+    },
+    { threshold: 0.06, rootMargin: '0px 0px 12% 0px' }
+  );
+  io.observe(root);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop();
+    else {
+      const r = root.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      if (r.bottom > 0 && r.top < vh) start();
+    }
+  });
+
+  viewport.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      next();
+      stop();
+      window.setTimeout(start, intervalMs);
+    } else if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      goTo(index - 1);
+      stop();
+      window.setTimeout(start, intervalMs);
+    }
+  });
+
+  if (slides.length > 0) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => goTo(0));
+    });
+  }
+
+  window.addEventListener('load', () => {
+    const r = root.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    if (slides.length >= 2 && r.bottom > 48 && r.top < vh - 48 && !document.hidden) {
+      start();
+    }
+  });
 })();
 </script>
 <?php endif; ?>
@@ -296,7 +406,7 @@ $content = ob_get_clean();
 
 $view = [
     'title' => 'Univers Diaspora — Accueil',
-    'meta_description' => 'Univers Diaspora vous conseille et vous accompagne pour vos projets en France et à l\'international : services, contact et rendez-vous.',
+    'meta_description' => 'Univers Diaspora vous conseille et vous accompagne pour vos projets : services, contact et rendez-vous.',
     'active' => '',
     'content' => $content,
     'flash' => $flash ?? [],

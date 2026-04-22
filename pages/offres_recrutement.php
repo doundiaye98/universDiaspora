@@ -21,11 +21,17 @@ ob_start();
 ?>
 <section class="ud-about-hero ud-page-offres py-3 py-md-4 py-lg-5">
   <div class="container px-3 px-sm-4">
-    <nav aria-label="Fil d’ariane" class="ud-breadcrumb">
+    <nav aria-label="Fil d’Ariane" class="ud-breadcrumb mb-3">
       <a href="<?= h($baseUrl) ?>/">Accueil</a>
       <span class="ud-breadcrumb__sep">/</span>
       <span>Offres &amp; recrutement</span>
     </nav>
+    <div class="ud-about-highlight mb-4 mb-lg-5">
+      <p class="ud-about-highlight__lead mb-0">
+        Partenariats, opportunités commerciales et carrières : retrouvez ici les annonces publiées par Univers Diaspora.
+        Les candidatures se font en ligne, avec envoi sécurisé de vos documents au format PDF.
+      </p>
+    </div>
     <div class="ud-section-title text-center mb-4 mb-lg-5">
       <div class="ud-section-kicker">À la une</div>
       <h1 class="ud-title mb-2">Offres &amp; recrutement</h1>
@@ -160,8 +166,17 @@ ob_start();
       </div>
     </div>
 
-    <div class="text-center mt-4 mt-md-5 px-1">
-      <a class="btn btn-primary ud-btn ud-btn--cta w-100 w-sm-auto" href="<?= h($baseUrl) ?>/#contact">Nous contacter</a>
+    <div class="ud-about-cta ud-surface text-center mt-4 mt-md-5">
+      <h2 class="ud-about-cta__title mb-2">Autres démarches</h2>
+      <p class="ud-about-cta__text mx-auto mb-4">
+        Pour toute question générale, un rendez-vous en bureau ou un premier échange sur un projet, utilisez les liens ci-dessous.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Nous contacter</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=rendez-vous">Prendre rendez-vous</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=equipe">Notre équipe</a>
+        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=politique-confidentialite">Confidentialité</a>
+      </div>
     </div>
   </div>
 </section>

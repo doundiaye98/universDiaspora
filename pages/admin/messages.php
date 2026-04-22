@@ -100,16 +100,10 @@ try {
 ob_start();
 ?>
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
-  <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 mb-3 mb-md-4">
-    <div class="min-w-0">
-      <div class="ud-admin-kicker">Administration</div>
-      <h1 class="ud-admin-title mb-1">Inbox</h1>
-      <div class="ud-admin-sub">Messages contact et demandes de rendez‑vous.</div>
-    </div>
-  </div>
+  <p class="ud-admin-page-lead text-muted mb-3 mb-md-4">Messages contact et demandes de rendez-vous — recherche et listes ci-dessous.</p>
 
   <div class="row g-3 g-lg-4">
-    <div class="col-12 col-xl-6">
+    <div class="col-12 col-xl-6" id="ud-inbox-contacts">
       <div class="ud-admin-panel">
         <div class="ud-admin-panel__head">
           <div class="ud-admin-panel__title">Messages contact</div>
@@ -168,7 +162,7 @@ ob_start();
       </div>
     </div>
 
-    <div class="col-12 col-xl-6">
+    <div class="col-12 col-xl-6" id="ud-inbox-appts">
       <div class="ud-admin-panel">
         <div class="ud-admin-panel__head">
           <div class="ud-admin-panel__title">Demandes reçues</div>
@@ -266,6 +260,7 @@ $content = ob_get_clean();
 
 $view = [
     'title' => 'Admin - Inbox',
+    'heading' => 'Inbox',
     'content' => $content,
     'flash' => $flash ?? [],
 ];

@@ -13,9 +13,7 @@ ob_start();
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
   <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-end justify-content-between gap-3 mb-3">
     <div class="min-w-0">
-      <div class="ud-admin-kicker">Recrutement</div>
-      <h1 class="ud-admin-title mb-0">Candidatures</h1>
-      <div class="ud-admin-sub">CV et lettres de motivation reçus depuis la page « Offres &amp; recrutement ».</div>
+      <p class="ud-admin-page-lead text-muted mb-0">CV et lettres reçus depuis la page « Offres &amp; recrutement ».</p>
     </div>
     <a class="btn btn-outline-primary ud-btn ud-btn--ghost flex-shrink-0 align-self-md-center" href="<?= h($baseUrl) ?>/?page=admin-announcements">Gérer les annonces</a>
   </div>
@@ -79,7 +77,8 @@ ob_start();
 $content = ob_get_clean();
 
 $view = [
-    'title' => 'Admin — Candidatures',
+    'title' => 'Admin - Candidatures',
+    'heading' => 'Candidatures',
     'content' => $content,
     'flash' => $flash ?? [],
 ];

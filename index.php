@@ -12,6 +12,8 @@ require __DIR__ . '/app/mailer.php';
 
 session_start();
 
+ud_security_headers();
+
 $flash = $_SESSION['flash'] ?? [];
 unset($_SESSION['flash']);
 
@@ -238,9 +240,31 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         $errors['external_url'] = 'URL invalide.';
     }
 
+    $iconUploadErr = service_icon_validate_upload($_FILES['icon_upload'] ?? null);
+    if ($iconUploadErr !== null) {
+        $errors['icon_upload'] = $iconUploadErr;
+    }
+
     if (!empty($errors)) {
         require __DIR__ . '/pages/admin/services.php';
         exit;
+    }
+
+    $iconFile = $_FILES['icon_upload'] ?? null;
+    $iconUploadedName = null;
+    if (
+        $iconFile !== null
+        && isset($iconFile['error'])
+        && (int)$iconFile['error'] === UPLOAD_ERR_OK
+    ) {
+        try {
+            $old['icon'] = service_icon_store_upload($iconFile, $old['slug']);
+            $iconUploadedName = $old['icon'];
+        } catch (Throwable $e) {
+            $errors['icon_upload'] = 'Photo du service : enregistrement impossible.';
+            require __DIR__ . '/pages/admin/services.php';
+            exit;
+        }
     }
 
     $payload = [
@@ -263,7 +287,11 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         'bullets_text' => $old['bullets_text'],
     ];
     $id = services_upsert($payload);
-    $_SESSION['flash'] = ['success' => 'Service enregistré.'];
+    $flashSuccess = 'Service enregistré.';
+    if ($iconUploadedName !== null && $iconUploadedName !== '') {
+        $flashSuccess .= ' Nouvelle photo : ' . $iconUploadedName;
+    }
+    $_SESSION['flash'] = ['success' => $flashSuccess];
     redirect('./?page=admin-services&edit=' . $id);
 }
 

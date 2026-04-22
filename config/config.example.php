@@ -9,6 +9,13 @@ return [
     'app' => [
         'name' => 'Univers Diaspora',
         'base_url' => 'http://localhost/universDiaspora',
+        /**
+         * Segment d’URL avant /assets/ (fichiers physiques toujours dans public/assets/).
+         * - Par défaut « public » → URLs du type {base_url}/public/assets/img/...
+         * - Si la racine web pointe déjà vers le dossier public/ (Apache/Nginx), mettre '' :
+         *   URLs {base_url}/assets/img/...
+         */
+        'assets_public_prefix' => 'public',
     ],
     'db' => [
         'host' => '127.0.0.1',
