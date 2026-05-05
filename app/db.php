@@ -75,10 +75,29 @@ function ensureContactSchema(PDO $pdo): void
           `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           `username` VARCHAR(80) NOT NULL,
           `password_hash` VARCHAR(255) NOT NULL,
+          `role` VARCHAR(20) NOT NULL DEFAULT \'super_admin\',
           `is_active` TINYINT(1) NOT NULL DEFAULT 1,
           `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (`id`),
           UNIQUE KEY `uniq_username` (`username`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+    $hasAdminRole = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_users' AND COLUMN_NAME = 'role'"
+    )->fetchColumn();
+    if ($hasAdminRole === 0) {
+        $pdo->exec("ALTER TABLE admin_users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'super_admin' AFTER password_hash");
+    }
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `admin_login_attempts` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `username` VARCHAR(80) NOT NULL,
+          `ip` VARCHAR(45) NULL,
+          `attempted_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_admin_login_attempts_user_time` (`username`, `attempted_at`),
+          KEY `idx_admin_login_attempts_ip_time` (`ip`, `attempted_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
 
@@ -229,8 +248,8 @@ function ensureContactSchema(PDO $pdo): void
     $existing = $stmt->fetchColumn();
     if (!$existing && $adminUser !== '' && !$weak) {
         $hash = password_hash($adminPass, PASSWORD_DEFAULT);
-        $ins = $pdo->prepare('INSERT INTO admin_users (username, password_hash, is_active) VALUES (:u, :h, 1)');
-        $ins->execute([':u' => $adminUser, ':h' => $hash]);
+        $ins = $pdo->prepare('INSERT INTO admin_users (username, password_hash, role, is_active) VALUES (:u, :h, :r, 1)');
+        $ins->execute([':u' => $adminUser, ':h' => $hash, ':r' => 'super_admin']);
     }
 
     // Seed services from data/services.php if DB is empty

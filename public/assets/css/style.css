@@ -3553,3 +3553,103 @@ h2[id^="privacy-"]{
     gap: 1rem;
   }
 }
+
+/* AI assistant chat widget */
+.ud-ai-chat{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1080;
+  font-family: var(--ud-font-body);
+}
+.ud-ai-chat__toggle{
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, var(--ud-blue), #162a52);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(14,26,52,.35);
+}
+.ud-ai-chat__panel{
+  width: min(370px, calc(100vw - 24px));
+  height: 500px;
+  max-height: calc(100vh - 110px);
+  margin-top: 10px;
+  background: rgba(255,255,255,.98);
+  border: 1px solid var(--ud-border);
+  border-radius: 16px;
+  box-shadow: 0 18px 46px rgba(16,28,52,.28);
+  display: none;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+.ud-ai-chat.is-open .ud-ai-chat__panel{ display: flex; flex-direction: column; }
+.ud-ai-chat__head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(30,58,110,.96), rgba(22,42,82,.96));
+  color: #fff;
+}
+.ud-ai-chat__title{ font-weight: 700; font-size: .95rem; }
+.ud-ai-chat__close{
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+.ud-ai-chat__messages{
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+  background:
+    radial-gradient(340px 180px at 20% -5%, rgba(217,160,74,.12), transparent 62%),
+    linear-gradient(180deg, #fbfcff, #f6f8fd);
+}
+.ud-ai-msg{
+  max-width: 90%;
+  font-size: .93rem;
+  line-height: 1.45;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.ud-ai-msg--bot{
+  background: #fff;
+  border: 1px solid var(--ud-border);
+  color: var(--ud-ink);
+}
+.ud-ai-msg--user{
+  margin-left: auto;
+  background: #1e3a6e;
+  color: #fff;
+}
+.ud-ai-chat__form{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--ud-border);
+  background: #fff;
+}
+.ud-ai-chat__input{
+  min-width: 0;
+  border: 1px solid var(--ud-border-strong);
+  border-radius: 10px;
+  padding: 10px 11px;
+}
+.ud-ai-chat__send{
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--ud-gold);
+  color: #1b1f2b;
+  font-weight: 700;
+}
+@media (max-width: 576px){
+  .ud-ai-chat{ right: 10px; left: 10px; bottom: 10px; }
+  .ud-ai-chat__panel{ width: 100%; }
+}

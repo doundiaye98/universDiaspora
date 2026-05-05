@@ -10,6 +10,7 @@ $old = $view['old'] ?? [];
 
 $config = require __DIR__ . '/../config/config.php';
 $baseUrl = rtrim($config['app']['base_url'], '/');
+$aiAssistantEnabled = (bool)($config['ai_assistant']['enabled'] ?? false);
 
 $services = function_exists('services_all') ? services_all() : (require __DIR__ . '/../data/services.php');
 
@@ -277,8 +278,35 @@ function isExternal(string $href): bool
   </div>
 </footer>
 
+<?php if ($aiAssistantEnabled): ?>
+<div class="ud-ai-chat" id="udAiChat" data-endpoint="<?= h($baseUrl) ?>/?action=ai-chat">
+  <button class="ud-ai-chat__toggle" id="udAiToggle" type="button" aria-expanded="false" aria-controls="udAiPanel">
+    Assistant IA
+  </button>
+  <section class="ud-ai-chat__panel" id="udAiPanel" aria-label="Assistant virtuel">
+    <header class="ud-ai-chat__head">
+      <div class="ud-ai-chat__title">Assistant Univers Diaspora</div>
+      <button class="ud-ai-chat__close" id="udAiClose" type="button" aria-label="Fermer">×</button>
+    </header>
+    <div class="ud-ai-chat__messages" id="udAiMessages">
+      <article class="ud-ai-msg ud-ai-msg--bot">
+        Bonjour. Je peux vous orienter vers le bon service et vers la prise de rendez-vous.
+      </article>
+    </div>
+    <form class="ud-ai-chat__form" id="udAiForm">
+      <label class="visually-hidden" for="udAiInput">Votre message</label>
+      <input id="udAiInput" name="message" class="ud-ai-chat__input" maxlength="700" placeholder="Ex: Je veux lancer mon entreprise..." required>
+      <button class="ud-ai-chat__send" type="submit">Envoyer</button>
+    </form>
+  </section>
+</div>
+<?php endif; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<?php if ($aiAssistantEnabled): ?>
+<script src="<?= h(ud_public_asset_url('js/ai-assistant.js', $baseUrl)) ?>"></script>
+<?php endif; ?>
 <script>
 (() => {
   // Carte : plusieurs fonds (comme sur téléphone) — plan détaillé, OSM, satellite

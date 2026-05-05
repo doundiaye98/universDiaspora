@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 $config = require __DIR__ . '/../../config/config.php';
 $baseUrl = rtrim($config['app']['base_url'], '/');
-admin_require_login($baseUrl);
+admin_require_min_role($baseUrl, 'super_admin');
 
 $pdo = db();
-$admins = $pdo->query('SELECT id, username, is_active, created_at FROM admin_users ORDER BY id ASC')->fetchAll();
+$admins = $pdo->query('SELECT id, username, role, is_active, created_at FROM admin_users ORDER BY id ASC')->fetchAll();
 
 $csrf = admin_csrf_token();
 $errors = $errors ?? [];
@@ -34,6 +34,7 @@ ob_start();
               <tr>
                 <th>ID</th>
                 <th>Utilisateur</th>
+                <th>Rôle</th>
                 <th>Actif</th>
                 <th>Créé</th>
               </tr>
@@ -43,6 +44,7 @@ ob_start();
                 <tr>
                   <td class="text-nowrap"><?= (int)$a['id'] ?></td>
                   <td class="fw-bold"><?= h((string)$a['username']) ?></td>
+                  <td><?= h((string)($a['role'] ?? 'viewer')) ?></td>
                   <td><?= !empty($a['is_active']) ? 'Oui' : 'Non' ?></td>
                   <td class="text-nowrap"><?= h(date('d/m/Y', strtotime((string)$a['created_at']))) ?></td>
                 </tr>
@@ -75,6 +77,16 @@ ob_start();
               <label class="form-label">Mot de passe (laisser vide pour ne pas changer)</label>
               <input type="password" class="form-control <?= isset($errors['password']) ? 'is-invalid' : '' ?>" name="password" value="">
               <?php if (isset($errors['password'])): ?><div class="invalid-feedback"><?= h($errors['password']) ?></div><?php endif; ?>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Rôle</label>
+              <select class="form-select <?= isset($errors['role']) ? 'is-invalid' : '' ?>" name="role">
+                <?php $selectedRole = (string)($old['role'] ?? 'editor'); ?>
+                <option value="viewer" <?= $selectedRole === 'viewer' ? 'selected' : '' ?>>viewer</option>
+                <option value="editor" <?= $selectedRole === 'editor' ? 'selected' : '' ?>>editor</option>
+                <option value="super_admin" <?= $selectedRole === 'super_admin' ? 'selected' : '' ?>>super_admin</option>
+              </select>
+              <?php if (isset($errors['role'])): ?><div class="invalid-feedback"><?= h($errors['role']) ?></div><?php endif; ?>
             </div>
             <div class="form-check mb-3">
               <input class="form-check-input" type="checkbox" value="1" id="isActive" name="is_active" <?= (($old['is_active'] ?? '1') === '1') ? 'checked' : '' ?>>

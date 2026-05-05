@@ -30,6 +30,14 @@ return [
         // Mot de passe initial : à définir dans config.local.php (min. 8 caractères).
         'password' => 'CHANGEME',
     ],
+    'admin_security' => [
+        // Déconnexion automatique après inactivité (en secondes).
+        'session_timeout' => 1800,
+        // Anti brute-force: nombre d'échecs max dans la fenêtre ci-dessous.
+        'max_login_attempts' => 5,
+        // Fenêtre anti brute-force (en secondes).
+        'login_attempt_window' => 900,
+    ],
     // Informations éditeur / hébergeur / textes juridiques (surchargez dans config.local.php).
     'legal' => [
         // Date d’affichage « dernière mise à jour » des pages Mentions & Politique (AAAA-MM-JJ).
@@ -85,5 +93,18 @@ return [
             // true en production si certificat SMTP valide
             'verify_peer' => false,
         ],
+    ],
+    'ai_assistant' => [
+        // Active/desactive le widget et l endpoint /?action=ai-chat
+        'enabled' => true,
+        // openai uniquement dans cette version
+        'provider' => 'openai',
+        // Renseigner dans config.local.php uniquement (ne pas versionner un secret)
+        'api_key' => '',
+        'model' => 'gpt-4o-mini',
+        'max_input_chars' => 700,
+        'max_output_tokens' => 260,
+        'temperature' => 0.4,
+        'timeout_seconds' => 18,
     ],
 ];

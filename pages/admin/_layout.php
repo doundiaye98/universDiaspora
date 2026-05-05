@@ -19,6 +19,7 @@ $baseUrl = rtrim($config['app']['base_url'], '/');
 admin_require_login($baseUrl);
 $csrf = admin_csrf_token();
 $currentPage = (string)($_GET['page'] ?? 'admin');
+$canManageAdmins = admin_has_min_role('super_admin');
 
 function adminNavLink(string $href, string $label, bool $active = false, bool $danger = false): string
 {
@@ -72,7 +73,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
       <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-testimonials', 'Témoignages', $currentPage === 'admin-testimonials') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
-      <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+      <?php if ($canManageAdmins): ?><?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?><?php endif; ?>
       <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
       <div class="ud-admin-nav__divider"></div>
       <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
@@ -104,7 +105,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
         <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-testimonials', 'Témoignages', $currentPage === 'admin-testimonials') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
-        <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
+        <?php if ($canManageAdmins): ?><?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?><?php endif; ?>
         <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
         <div class="ud-admin-nav__divider"></div>
         <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
@@ -118,7 +119,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
     <header class="ud-admin-main__top">
       <div class="min-w-0">
         <h1 class="ud-admin-main__page-title"><?= h($adminHeading) ?></h1>
-        <p class="ud-admin-main__meta mb-0">Connecté en tant que <strong><?= h($_SESSION['admin']['username'] ?? 'admin') ?></strong></p>
+        <p class="ud-admin-main__meta mb-0">Connecté en tant que <strong><?= h($_SESSION['admin']['username'] ?? 'admin') ?></strong> · rôle <strong><?= h(admin_role()) ?></strong></p>
       </div>
     </header>
 

@@ -10,6 +10,7 @@ require __DIR__ . '/app/job_applications.php';
 require __DIR__ . '/app/team_members.php';
 require __DIR__ . '/app/testimonials.php';
 require __DIR__ . '/app/mailer.php';
+require __DIR__ . '/app/ai_assistant.php';
 
 session_start();
 
@@ -112,14 +113,22 @@ if (($_GET['action'] ?? '') === 'admin-login' && $_SERVER['REQUEST_METHOD'] === 
 
     try {
         $pdo = db();
+        $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        if (admin_login_attempt_is_limited($pdo, $old['username'], $clientIp)) {
+            $errors['password'] = 'Trop de tentatives. Réessayez dans quelques minutes.';
+            require __DIR__ . '/pages/admin/login.php';
+            exit;
+        }
         $loginCode = admin_login($pdo, $old['username'], $password);
         if ($loginCode !== 0) {
+            admin_login_attempt_record_failure($pdo, $old['username'], $clientIp);
             $errors['password'] = $loginCode === 2
                 ? 'Ce compte est désactivé. Réactivez-le dans la base (is_active = 1) ou via un autre admin.'
                 : 'Identifiants invalides.';
             require __DIR__ . '/pages/admin/login.php';
             exit;
         }
+        admin_login_attempt_clear($pdo, $old['username'], $clientIp);
         session_regenerate_id(true);
         $_SESSION['flash'] = ['success' => 'Connexion réussie.'];
         redirect('./?page=admin');
@@ -146,7 +155,7 @@ if (($_GET['action'] ?? '') === 'admin-logout') {
 if (($_GET['action'] ?? '') === 'admin-appointment-status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
 
     $id = (int) post('id');
@@ -210,7 +219,7 @@ if (($_GET['action'] ?? '') === 'admin-appointment-status' && $_SERVER['REQUEST_
 if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
 
     $old = [
@@ -311,7 +320,7 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
 if (($_GET['action'] ?? '') === 'admin-service-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
     $id = (int)post('id');
     if ($id > 0) {
@@ -325,7 +334,7 @@ if (($_GET['action'] ?? '') === 'admin-service-delete' && $_SERVER['REQUEST_METH
 if (($_GET['action'] ?? '') === 'admin-announcement-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
 
     $old = [
@@ -368,7 +377,7 @@ if (($_GET['action'] ?? '') === 'admin-announcement-save' && $_SERVER['REQUEST_M
 if (($_GET['action'] ?? '') === 'admin-announcement-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
     $id = (int)post('id');
     if ($id > 0) {
@@ -382,7 +391,7 @@ if (($_GET['action'] ?? '') === 'admin-announcement-delete' && $_SERVER['REQUEST
 if (($_GET['action'] ?? '') === 'admin-team-member-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
 
     $pdo = db();
@@ -457,7 +466,7 @@ if (($_GET['action'] ?? '') === 'admin-team-member-save' && $_SERVER['REQUEST_ME
 if (($_GET['action'] ?? '') === 'admin-team-member-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
     $id = (int)post('id');
     if ($id > 0) {
@@ -471,7 +480,7 @@ if (($_GET['action'] ?? '') === 'admin-team-member-delete' && $_SERVER['REQUEST_
 if (($_GET['action'] ?? '') === 'admin-testimonial-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
     $id = (int)post('id');
     $old = [
@@ -513,7 +522,7 @@ if (($_GET['action'] ?? '') === 'admin-testimonial-save' && $_SERVER['REQUEST_ME
 if (($_GET['action'] ?? '') === 'admin-testimonial-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     admin_csrf_verify();
     $id = (int)post('id');
     if ($id > 0) {
@@ -527,7 +536,7 @@ if (($_GET['action'] ?? '') === 'admin-testimonial-delete' && $_SERVER['REQUEST_
 if (($_GET['action'] ?? '') === 'admin-job-application-file') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'editor');
     $id = (int)($_GET['id'] ?? 0);
     $kind = (string)($_GET['kind'] ?? '');
     if ($id <= 0 || !in_array($kind, ['cv', 'cover'], true)) {
@@ -561,21 +570,26 @@ if (($_GET['action'] ?? '') === 'admin-job-application-file') {
 if (($_GET['action'] ?? '') === 'admin-user-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $config = require __DIR__ . '/config/config.php';
     $baseUrl = rtrim($config['app']['base_url'], '/');
-    admin_require_login($baseUrl);
+    admin_require_min_role($baseUrl, 'super_admin');
     admin_csrf_verify();
 
     $id = (int)post('id');
     $username = post('username');
     $password = post('password');
+    $role = post('role');
     $isActive = post('is_active') === '1' ? 1 : 0;
 
     $errors = [];
     if ($username === '') $errors['username'] = 'Utilisateur requis.';
     if ($id === 0 && $password === '') $errors['password'] = 'Mot de passe requis.';
     if ($password !== '' && strlen($password) < 6) $errors['password'] = 'Min 6 caractères.';
+    if (!in_array($role, ['super_admin', 'editor', 'viewer'], true)) $errors['role'] = 'Rôle invalide.';
+    if ($id > 0 && (int)($_SESSION['admin']['id'] ?? 0) === $id && $role !== 'super_admin') {
+        $errors['role'] = 'Votre propre compte doit rester super_admin.';
+    }
 
     if (!empty($errors)) {
-        $old = ['id' => (string)$id, 'username' => $username, 'is_active' => (string)$isActive];
+        $old = ['id' => (string)$id, 'username' => $username, 'role' => $role, 'is_active' => (string)$isActive];
         require __DIR__ . '/pages/admin/admins.php';
         exit;
     }
@@ -584,17 +598,20 @@ if (($_GET['action'] ?? '') === 'admin-user-save' && $_SERVER['REQUEST_METHOD'] 
     if ($id > 0) {
         if ($password !== '') {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare('UPDATE admin_users SET username=:u, password_hash=:h, is_active=:a WHERE id=:id');
-            $stmt->execute([':u' => $username, ':h' => $hash, ':a' => $isActive, ':id' => $id]);
+            $stmt = $pdo->prepare('UPDATE admin_users SET username=:u, password_hash=:h, role=:r, is_active=:a WHERE id=:id');
+            $stmt->execute([':u' => $username, ':h' => $hash, ':r' => $role, ':a' => $isActive, ':id' => $id]);
         } else {
-            $stmt = $pdo->prepare('UPDATE admin_users SET username=:u, is_active=:a WHERE id=:id');
-            $stmt->execute([':u' => $username, ':a' => $isActive, ':id' => $id]);
+            $stmt = $pdo->prepare('UPDATE admin_users SET username=:u, role=:r, is_active=:a WHERE id=:id');
+            $stmt->execute([':u' => $username, ':r' => $role, ':a' => $isActive, ':id' => $id]);
+        }
+        if ((int)($_SESSION['admin']['id'] ?? 0) === $id) {
+            $_SESSION['admin']['role'] = $role;
         }
         $_SESSION['flash'] = ['success' => 'Administrateur mis à jour.'];
     } else {
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('INSERT INTO admin_users (username, password_hash, is_active) VALUES (:u, :h, :a)');
-        $stmt->execute([':u' => $username, ':h' => $hash, ':a' => $isActive]);
+        $stmt = $pdo->prepare('INSERT INTO admin_users (username, password_hash, role, is_active) VALUES (:u, :h, :r, :a)');
+        $stmt->execute([':u' => $username, ':h' => $hash, ':r' => $role, ':a' => $isActive]);
         $_SESSION['flash'] = ['success' => 'Administrateur ajouté.'];
     }
     redirect('./?page=admin-admins');
@@ -776,6 +793,13 @@ if (($_GET['action'] ?? '') === 'job-application' && $_SERVER['REQUEST_METHOD'] 
 
     $_SESSION['flash'] = ['success' => 'Votre candidature a bien été envoyée. Merci !'];
     redirect('./?page=offres-recrutement');
+}
+
+// Public AI assistant endpoint
+if (($_GET['action'] ?? '') === 'ai-chat') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim((string)($config['app']['base_url'] ?? ''), '/');
+    ud_ai_assistant_handle_http($baseUrl);
 }
 
 // Simple router: home or service page by slug
