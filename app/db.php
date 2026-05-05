@@ -96,6 +96,12 @@ function ensureContactSchema(PDO $pdo): void
           `step2_text` TEXT NULL,
           `step3_title` VARCHAR(120) NULL,
           `step3_text` TEXT NULL,
+          `faq1_q` VARCHAR(255) NULL,
+          `faq1_a` TEXT NULL,
+          `faq2_q` VARCHAR(255) NULL,
+          `faq2_a` TEXT NULL,
+          `faq3_q` VARCHAR(255) NULL,
+          `faq3_a` TEXT NULL,
           `icon` VARCHAR(190) NULL,
           `external_url` VARCHAR(255) NULL,
           `coming_soon` TINYINT(1) NOT NULL DEFAULT 0,
@@ -115,6 +121,12 @@ function ensureContactSchema(PDO $pdo): void
         'step2_text' => 'TEXT NULL',
         'step3_title' => 'VARCHAR(120) NULL',
         'step3_text' => 'TEXT NULL',
+        'faq1_q' => 'VARCHAR(255) NULL',
+        'faq1_a' => 'TEXT NULL',
+        'faq2_q' => 'VARCHAR(255) NULL',
+        'faq2_a' => 'TEXT NULL',
+        'faq3_q' => 'VARCHAR(255) NULL',
+        'faq3_a' => 'TEXT NULL',
     ];
     foreach ($serviceCols as $colName => $colDef) {
         $has = (int) $pdo->query(
@@ -189,6 +201,24 @@ function ensureContactSchema(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
 
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `testimonials` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `quote` TEXT NOT NULL,
+          `author` VARCHAR(190) NOT NULL,
+          `location` VARCHAR(190) NULL,
+          `case_label` VARCHAR(190) NULL,
+          `case_value` VARCHAR(255) NULL,
+          `sort_order` INT NOT NULL DEFAULT 0,
+          `is_published` TINYINT(1) NOT NULL DEFAULT 1,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_testimonials_sort` (`sort_order`),
+          KEY `idx_testimonials_published` (`is_published`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+
     // Seed initial admin user if missing (credentials from config) — jamais avec mot de passe par défaut faible.
     $config = require __DIR__ . '/../config/config.php';
     $adminUser = trim((string)($config['admin']['username'] ?? 'admin'));
@@ -241,6 +271,40 @@ function ensureContactSchema(PDO $pdo): void
 
     require_once __DIR__ . '/team_members.php';
     team_members_seed_from_data_file($pdo);
+
+    // Seed testimonials from file if table is empty
+    $tCount = (int)$pdo->query('SELECT COUNT(*) FROM testimonials')->fetchColumn();
+    if ($tCount === 0) {
+        $tPath = dirname(__DIR__) . '/data/testimonials.php';
+        if (is_file($tPath)) {
+            $seed = require $tPath;
+            if (is_array($seed)) {
+                foreach ($seed as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $q = trim((string)($row['quote'] ?? ''));
+                    $a = trim((string)($row['author'] ?? ''));
+                    if ($q === '' || $a === '') {
+                        continue;
+                    }
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO testimonials (quote, author, location, case_label, case_value, sort_order, is_published)
+                         VALUES (:q, :a, :l, :cl, :cv, :so, :p)'
+                    );
+                    $stmt->execute([
+                        ':q' => $q,
+                        ':a' => $a,
+                        ':l' => ($row['location'] ?? '') !== '' ? (string)$row['location'] : null,
+                        ':cl' => ($row['case_label'] ?? '') !== '' ? (string)$row['case_label'] : null,
+                        ':cv' => ($row['case_value'] ?? '') !== '' ? (string)$row['case_value'] : null,
+                        ':so' => (int)($row['sort_order'] ?? 0),
+                        ':p' => !empty($row['is_published']) ? 1 : 0,
+                    ]);
+                }
+            }
+        }
+    }
 }
 
 function db(): PDO

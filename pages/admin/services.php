@@ -100,6 +100,12 @@ ob_start();
             'step2_text' => '',
             'step3_title' => '',
             'step3_text' => '',
+            'faq1_q' => '',
+            'faq1_a' => '',
+            'faq2_q' => '',
+            'faq2_a' => '',
+            'faq3_q' => '',
+            'faq3_a' => '',
             'icon' => '',
             'external_url' => '',
             'coming_soon' => false,
@@ -121,6 +127,12 @@ ob_start();
             $form['step2_text'] = (string)($old['step2_text'] ?? '');
             $form['step3_title'] = (string)($old['step3_title'] ?? '');
             $form['step3_text'] = (string)($old['step3_text'] ?? '');
+            $form['faq1_q'] = (string)($old['faq1_q'] ?? '');
+            $form['faq1_a'] = (string)($old['faq1_a'] ?? '');
+            $form['faq2_q'] = (string)($old['faq2_q'] ?? '');
+            $form['faq2_a'] = (string)($old['faq2_a'] ?? '');
+            $form['faq3_q'] = (string)($old['faq3_q'] ?? '');
+            $form['faq3_a'] = (string)($old['faq3_a'] ?? '');
             $form['icon'] = (string)($old['icon'] ?? '');
             $form['external_url'] = (string)($old['external_url'] ?? '');
             $form['sort_order'] = (int)($old['sort_order'] ?? 0);
@@ -193,6 +205,28 @@ ob_start();
                     <label class="form-label small text-muted mb-1">Étape 3</label>
                     <input class="form-control form-control-sm" name="step3_title" value="<?= h((string)($form['step3_title'] ?? '')) ?>" placeholder="Titre 3" aria-label="Titre étape 3">
                     <textarea class="form-control form-control-sm mt-1" name="step3_text" rows="3" placeholder="Texte 3" aria-label="Texte étape 3"><?= h((string)($form['step3_text'] ?? '')) ?></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 ud-admin-form-block">
+                <span class="ud-admin-form-block__title">FAQ — 3 questions max</span>
+                <p class="small text-muted mb-3 mb-md-2">Affichée sur la page service. Laisser vide pour masquer la FAQ.</p>
+                <div class="row g-2">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted mb-1">FAQ 1</label>
+                    <input class="form-control form-control-sm" name="faq1_q" value="<?= h((string)($form['faq1_q'] ?? '')) ?>" placeholder="Question 1" aria-label="Question FAQ 1">
+                    <textarea class="form-control form-control-sm mt-1" name="faq1_a" rows="3" placeholder="Réponse 1" aria-label="Réponse FAQ 1"><?= h((string)($form['faq1_a'] ?? '')) ?></textarea>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted mb-1">FAQ 2</label>
+                    <input class="form-control form-control-sm" name="faq2_q" value="<?= h((string)($form['faq2_q'] ?? '')) ?>" placeholder="Question 2" aria-label="Question FAQ 2">
+                    <textarea class="form-control form-control-sm mt-1" name="faq2_a" rows="3" placeholder="Réponse 2" aria-label="Réponse FAQ 2"><?= h((string)($form['faq2_a'] ?? '')) ?></textarea>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted mb-1">FAQ 3</label>
+                    <input class="form-control form-control-sm" name="faq3_q" value="<?= h((string)($form['faq3_q'] ?? '')) ?>" placeholder="Question 3" aria-label="Question FAQ 3">
+                    <textarea class="form-control form-control-sm mt-1" name="faq3_a" rows="3" placeholder="Réponse 3" aria-label="Réponse FAQ 3"><?= h((string)($form['faq3_a'] ?? '')) ?></textarea>
                   </div>
                 </div>
               </div>

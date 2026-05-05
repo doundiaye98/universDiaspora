@@ -284,6 +284,12 @@ function services_all(PDO $pdo = null): array
                 'step2_text' => (string)($r['step2_text'] ?? ''),
                 'step3_title' => (string)($r['step3_title'] ?? ''),
                 'step3_text' => (string)($r['step3_text'] ?? ''),
+                'faq1_q' => (string)($r['faq1_q'] ?? ''),
+                'faq1_a' => (string)($r['faq1_a'] ?? ''),
+                'faq2_q' => (string)($r['faq2_q'] ?? ''),
+                'faq2_a' => (string)($r['faq2_a'] ?? ''),
+                'faq3_q' => (string)($r['faq3_q'] ?? ''),
+                'faq3_a' => (string)($r['faq3_a'] ?? ''),
                 'icon' => (string)($r['icon'] ?? ''),
                 'external_url' => $r['external_url'] ? (string)$r['external_url'] : null,
                 'coming_soon' => !empty($r['coming_soon']),
@@ -322,6 +328,12 @@ function services_find_by_slug(string $slug, PDO $pdo = null): ?array
             'step2_text' => (string)($r['step2_text'] ?? ''),
             'step3_title' => (string)($r['step3_title'] ?? ''),
             'step3_text' => (string)($r['step3_text'] ?? ''),
+            'faq1_q' => (string)($r['faq1_q'] ?? ''),
+            'faq1_a' => (string)($r['faq1_a'] ?? ''),
+            'faq2_q' => (string)($r['faq2_q'] ?? ''),
+            'faq2_a' => (string)($r['faq2_a'] ?? ''),
+            'faq3_q' => (string)($r['faq3_q'] ?? ''),
+            'faq3_a' => (string)($r['faq3_a'] ?? ''),
             'icon' => (string)($r['icon'] ?? ''),
             'external_url' => $r['external_url'] ? (string)$r['external_url'] : null,
             'coming_soon' => !empty($r['coming_soon']),
@@ -356,6 +368,12 @@ function services_upsert(array $input, PDO $pdo = null): int
     $step2Text = trim((string)($input['step2_text'] ?? ''));
     $step3Title = trim((string)($input['step3_title'] ?? ''));
     $step3Text = trim((string)($input['step3_text'] ?? ''));
+    $faq1Q = trim((string)($input['faq1_q'] ?? ''));
+    $faq1A = trim((string)($input['faq1_a'] ?? ''));
+    $faq2Q = trim((string)($input['faq2_q'] ?? ''));
+    $faq2A = trim((string)($input['faq2_a'] ?? ''));
+    $faq3Q = trim((string)($input['faq3_q'] ?? ''));
+    $faq3A = trim((string)($input['faq3_a'] ?? ''));
     $icon = trim((string)($input['icon'] ?? ''));
     if ($icon !== '' && !preg_match('~^https?://~i', $icon)) {
         $icon = str_replace('\\', '/', $icon);
@@ -373,6 +391,7 @@ function services_upsert(array $input, PDO $pdo = null): int
         $stmt = $pdo->prepare(
             'UPDATE services SET slug=:slug,title=:title,description=:description,details=:details,details_is_html=:dih,' .
             'step1_title=:s1t,step1_text=:s1x,step2_title=:s2t,step2_text=:s2x,step3_title=:s3t,step3_text=:s3x,' .
+            'faq1_q=:f1q,faq1_a=:f1a,faq2_q=:f2q,faq2_a=:f2a,faq3_q=:f3q,faq3_a=:f3a,' .
             'icon=:icon,external_url=:external_url,coming_soon=:coming_soon,sort_order=:sort_order WHERE id=:id'
         );
         $stmt->execute([
@@ -387,6 +406,12 @@ function services_upsert(array $input, PDO $pdo = null): int
             ':s2x' => ($step2Text === '' ? null : $step2Text),
             ':s3t' => ($step3Title === '' ? null : $step3Title),
             ':s3x' => ($step3Text === '' ? null : $step3Text),
+            ':f1q' => ($faq1Q === '' ? null : $faq1Q),
+            ':f1a' => ($faq1A === '' ? null : $faq1A),
+            ':f2q' => ($faq2Q === '' ? null : $faq2Q),
+            ':f2a' => ($faq2A === '' ? null : $faq2A),
+            ':f3q' => ($faq3Q === '' ? null : $faq3Q),
+            ':f3a' => ($faq3A === '' ? null : $faq3A),
             ':icon' => ($icon === '' ? null : $icon),
             ':external_url' => $external,
             ':coming_soon' => $comingSoon,
@@ -398,8 +423,8 @@ function services_upsert(array $input, PDO $pdo = null): int
     }
 
     $stmt = $pdo->prepare(
-        'INSERT INTO services (slug,title,description,details,details_is_html,step1_title,step1_text,step2_title,step2_text,step3_title,step3_text,icon,external_url,coming_soon,sort_order) ' .
-        'VALUES (:slug,:title,:description,:details,:dih,:s1t,:s1x,:s2t,:s2x,:s3t,:s3x,:icon,:external_url,:coming_soon,:sort_order)'
+        'INSERT INTO services (slug,title,description,details,details_is_html,step1_title,step1_text,step2_title,step2_text,step3_title,step3_text,faq1_q,faq1_a,faq2_q,faq2_a,faq3_q,faq3_a,icon,external_url,coming_soon,sort_order) ' .
+        'VALUES (:slug,:title,:description,:details,:dih,:s1t,:s1x,:s2t,:s2x,:s3t,:s3x,:f1q,:f1a,:f2q,:f2a,:f3q,:f3a,:icon,:external_url,:coming_soon,:sort_order)'
     );
     $stmt->execute([
         ':slug' => $slug,
@@ -413,6 +438,12 @@ function services_upsert(array $input, PDO $pdo = null): int
         ':s2x' => ($step2Text === '' ? null : $step2Text),
         ':s3t' => ($step3Title === '' ? null : $step3Title),
         ':s3x' => ($step3Text === '' ? null : $step3Text),
+        ':f1q' => ($faq1Q === '' ? null : $faq1Q),
+        ':f1a' => ($faq1A === '' ? null : $faq1A),
+        ':f2q' => ($faq2Q === '' ? null : $faq2Q),
+        ':f2a' => ($faq2A === '' ? null : $faq2A),
+        ':f3q' => ($faq3Q === '' ? null : $faq3Q),
+        ':f3a' => ($faq3A === '' ? null : $faq3A),
         ':icon' => ($icon === '' ? null : $icon),
         ':external_url' => $external,
         ':coming_soon' => $comingSoon,

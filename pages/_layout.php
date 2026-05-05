@@ -68,6 +68,25 @@ function isExternal(string $href): bool
   <meta name="twitter:title" content="<?= h($title) ?>">
   <meta name="twitter:description" content="<?= h($metaDescription) ?>">
   <meta name="twitter:image" content="<?= h($ogImage) ?>">
+  <?php
+    $localBusinessSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'LocalBusiness',
+        'name' => (string)($config['app']['name'] ?? 'Univers Diaspora'),
+        'url' => $baseUrl . '/',
+        'image' => $ogImage,
+        'email' => 'contact@universdiaspora.com',
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => '19, Rue Richomme',
+            'addressLocality' => 'Paris',
+            'postalCode' => '75018',
+            'addressCountry' => 'FR',
+        ],
+        'areaServed' => ['Paris', 'Colombes', 'Diaspora'],
+    ];
+  ?>
+  <script type="application/ld+json"><?= json_encode($localBusinessSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
   <meta name="theme-color" content="#1a3462">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,7 +97,12 @@ function isExternal(string $href): bool
   <link href="<?= h(ud_public_asset_url('css/style.css', $baseUrl)) ?>" rel="stylesheet">
 </head>
 <?php $isHome = ($active === '' && ($pageParam === '' || $pageParam === 'home')); ?>
-<body class="ud-body<?= $isHome ? ' ud-home' : '' ?>">
+<body class="ud-body ud-video-bg-enabled<?= $isHome ? ' ud-home' : '' ?>">
+<div class="ud-home-video-bg" aria-hidden="true">
+  <video autoplay muted loop playsinline preload="metadata">
+    <source src="<?= h($baseUrl . '/video/6797-196071980_medium.mp4') ?>" type="video/mp4">
+  </video>
+</div>
 
 <header class="ud-topbar">
   <nav class="navbar navbar-expand-lg py-2 ud-navbar">

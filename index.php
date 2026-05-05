@@ -8,6 +8,7 @@ require __DIR__ . '/app/services.php';
 require __DIR__ . '/app/announcements.php';
 require __DIR__ . '/app/job_applications.php';
 require __DIR__ . '/app/team_members.php';
+require __DIR__ . '/app/testimonials.php';
 require __DIR__ . '/app/mailer.php';
 
 session_start();
@@ -225,6 +226,12 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         'step2_text' => post('step2_text'),
         'step3_title' => post('step3_title'),
         'step3_text' => post('step3_text'),
+        'faq1_q' => post('faq1_q'),
+        'faq1_a' => post('faq1_a'),
+        'faq2_q' => post('faq2_q'),
+        'faq2_a' => post('faq2_a'),
+        'faq3_q' => post('faq3_q'),
+        'faq3_a' => post('faq3_a'),
         'icon' => post('icon'),
         'external_url' => post('external_url'),
         'sort_order' => post('sort_order'),
@@ -280,6 +287,12 @@ if (($_GET['action'] ?? '') === 'admin-service-save' && $_SERVER['REQUEST_METHOD
         'step2_text' => $old['step2_text'],
         'step3_title' => $old['step3_title'],
         'step3_text' => $old['step3_text'],
+        'faq1_q' => $old['faq1_q'],
+        'faq1_a' => $old['faq1_a'],
+        'faq2_q' => $old['faq2_q'],
+        'faq2_a' => $old['faq2_a'],
+        'faq3_q' => $old['faq3_q'],
+        'faq3_a' => $old['faq3_a'],
         'icon' => $old['icon'],
         'external_url' => $old['external_url'],
         'sort_order' => (int)($old['sort_order'] === '' ? 0 : $old['sort_order']),
@@ -452,6 +465,62 @@ if (($_GET['action'] ?? '') === 'admin-team-member-delete' && $_SERVER['REQUEST_
         $_SESSION['flash'] = ['success' => 'Membre supprimé.'];
     }
     redirect('./?page=admin-team-members');
+}
+
+// Admin: témoignages (CRUD)
+if (($_GET['action'] ?? '') === 'admin-testimonial-save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+    $id = (int)post('id');
+    $old = [
+        'id' => $id,
+        'quote' => post('quote'),
+        'author' => post('author'),
+        'location' => post('location'),
+        'case_label' => post('case_label'),
+        'case_value' => post('case_value'),
+        'sort_order' => post('sort_order'),
+        'is_published' => post('is_published'),
+    ];
+    $errors = [];
+    if (trim((string)$old['quote']) === '') $errors['quote'] = 'Témoignage requis.';
+    if (trim((string)$old['author']) === '') $errors['author'] = 'Auteur requis.';
+    if (!empty($errors)) {
+        require __DIR__ . '/pages/admin/testimonials.php';
+        exit;
+    }
+    try {
+        $newId = testimonials_upsert([
+            'id' => $id,
+            'quote' => trim((string)$old['quote']),
+            'author' => trim((string)$old['author']),
+            'location' => trim((string)$old['location']),
+            'case_label' => trim((string)$old['case_label']),
+            'case_value' => trim((string)$old['case_value']),
+            'sort_order' => (int)($old['sort_order'] === '' ? 0 : $old['sort_order']),
+            'is_published' => ((string)$old['is_published'] === '1'),
+        ]);
+        $_SESSION['flash'] = ['success' => 'Témoignage enregistré.'];
+        redirect('./?page=admin-testimonials&edit=' . $newId);
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['error' => 'Impossible d’enregistrer le témoignage.'];
+        redirect('./?page=admin-testimonials');
+    }
+}
+
+if (($_GET['action'] ?? '') === 'admin-testimonial-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = require __DIR__ . '/config/config.php';
+    $baseUrl = rtrim($config['app']['base_url'], '/');
+    admin_require_login($baseUrl);
+    admin_csrf_verify();
+    $id = (int)post('id');
+    if ($id > 0) {
+        testimonials_delete($id);
+        $_SESSION['flash'] = ['success' => 'Témoignage supprimé.'];
+    }
+    redirect('./?page=admin-testimonials');
 }
 
 // Admin: télécharger un PDF de candidature (CV ou lettre)
@@ -732,6 +801,7 @@ $specialPages = [
     'admin-announcements' => __DIR__ . '/pages/admin/announcements.php',
     'admin-job-applications' => __DIR__ . '/pages/admin/job_applications.php',
     'admin-team-members' => __DIR__ . '/pages/admin/team_members.php',
+    'admin-testimonials' => __DIR__ . '/pages/admin/testimonials.php',
 ];
 if (isset($specialPages[$page])) {
     require $specialPages[$page];

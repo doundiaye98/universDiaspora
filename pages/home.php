@@ -7,35 +7,44 @@ $baseUrl = rtrim($config['app']['base_url'], '/');
 
 ob_start();
 ?>
-<div class="ud-hero-wrap" style="--ud-hero-bg: url('<?= h(ud_public_asset_url('img/arriereplan.png', $baseUrl)) ?>');">
-<section class="ud-hero">
+<div class="ud-hero-wrap ud-hero-wrap--video-clean">
+<section class="ud-hero ud-hero--video-clean">
   <div class="container">
-    <div class="row align-items-center g-4">
-      <div class="col-12 col-lg-6">
-        <h1 class="ud-hero__headline mb-3"><span class="ud-hero__brand">Univers Diaspora</span></h1>
-        <p class="ud-hero__tagline mb-4">
-          L’agence <strong>Univers Diaspora</strong> vous conseille et vous accompagne pour la réalisation de vos projets.
+    <div class="row align-items-center g-4 g-xl-5">
+      <div class="col-12 col-xl-8">
+        <div class="ud-hero__badge">Univers Diaspora · Depuis Mars 2024</div>
+        <h1 class="ud-hero__headline ud-hero__headline--video mb-3">
+          <span class="ud-hero__brand">Faire de vos rêves</span><br>une réalité.
+        </h1>
+        <p class="ud-hero__tagline ud-hero__tagline--video mb-4">
+          Conseil, accompagnement et solutions concrètes pour la diaspora.
+          Une équipe engagée pour transformer vos projets en résultats.
         </p>
-        <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-primary ud-btn ud-btn--cta" href="#services">Découvrir nos services</a>
-          <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="#contact">Nous contacter</a>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/?page=rendez-vous">Prendre rendez-vous</a>
+          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="#services">Découvrir nos services</a>
+        </div>
+        <div class="ud-hero__chips">
+          <span class="ud-hero__chip">12 pôles de services</span>
+          <span class="ud-hero__chip">3 bureaux</span>
+          <span class="ud-hero__chip">Suivi personnalisé</span>
         </div>
       </div>
-      <div class="col-12 col-lg-6 text-center">
-        <img class="ud-hero__logo img-fluid" src="<?= h(ud_public_asset_url('img/entete-univers-diasporas.png', $baseUrl)) ?>" alt="Univers Diaspora">
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="ud-hero-images">
-  <div class="container">
-    <div class="row align-items-center g-4">
-      <div class="col-12 col-lg-4 text-center">
-        <img class="img-fluid" src="<?= h(ud_public_asset_url('img/diasporas-bulles.png', $baseUrl)) ?>" alt="">
-      </div>
-      <div class="col-12 col-lg-8 text-center text-lg-end">
-        <img class="img-fluid ud-hero-images__screen" src="<?= h(ud_public_asset_url('img/diasporas-ordi-droit.jpg', $baseUrl)) ?>" alt="">
+      <div class="col-12 col-xl-4">
+        <div class="ud-hero__office-cards">
+          <div class="ud-hero__office-card">
+            <div class="ud-hero__office-city">Paris 18</div>
+            <div class="ud-hero__office-name">Rue Richomme</div>
+          </div>
+          <div class="ud-hero__office-card">
+            <div class="ud-hero__office-city">Paris 17</div>
+            <div class="ud-hero__office-name">Rue des Moines</div>
+          </div>
+          <div class="ud-hero__office-card">
+            <div class="ud-hero__office-city">Colombes</div>
+            <div class="ud-hero__office-name">92700</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -51,84 +60,75 @@ ob_start();
       <div class="ud-section-divider mt-3" aria-hidden="true"></div>
     </div>
 
-    <div class="ud-services__meta mb-4">
-      <div class="row g-3 align-items-center">
-        <div class="col-12 col-lg-7">
-          <div class="row g-2 justify-content-center justify-content-lg-start ud-service-chips">
-            <div class="col-auto"><span class="ud-chip">Rapidité</span></div>
-            <div class="col-auto"><span class="ud-chip">Fiabilité</span></div>
-            <div class="col-auto"><span class="ud-chip">Accompagnement</span></div>
-            <div class="col-auto"><span class="ud-chip">Sur-mesure</span></div>
-          </div>
+    <div class="row g-3 ud-services-grid-simple">
+      <?php foreach ($services as $s): ?>
+        <?php $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode((string)$s['slug'])); ?>
+        <?php
+          $slug = (string)($s['slug'] ?? '');
+          $target = 'Diaspora';
+          if (in_array($slug, ['creation-gestion-d-entreprises', 'assurances-credits', 'informatiques'], true)) {
+              $target = 'Entrepreneur';
+          } elseif (in_array($slug, ['services-a-la-personne', 'assistances-administratives', 'formations-emplois'], true)) {
+              $target = 'Particulier';
+          }
+        ?>
+        <div class="col-12 col-md-6 col-xl-4">
+          <article class="ud-service-simple h-100<?= !empty($s['coming_soon']) ? ' is-soon' : '' ?>">
+            <div class="ud-service-simple__top">
+              <img class="ud-service-simple__icon" src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) ?>" alt="" width="48" height="48" loading="lazy">
+              <?php if (!empty($s['coming_soon'])): ?><span class="ud-pill ud-pill--soon">Bientôt</span><?php endif; ?>
+            </div>
+            <h3 class="ud-service-simple__title"><?= h((string)$s['title']) ?></h3>
+            <p class="ud-service-simple__desc"><?= h((string)($s['description'] ?? '')) ?></p>
+            <div class="ud-service-simple__audience">Pour qui : <?= h($target) ?></div>
+            <?php if (empty($s['coming_soon'])): ?>
+              <a class="btn btn-primary ud-btn ud-btn--shine ud-service-simple__cta" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+                Découvrir <span class="ud-arrow" aria-hidden="true">→</span>
+              </a>
+            <?php else: ?>
+              <span class="ud-badge">En cours de création</span>
+            <?php endif; ?>
+          </article>
         </div>
-        <div class="col-12 col-lg-5">
-          <div class="ud-stats">
-            <div class="ud-stat">
-              <div class="ud-stat__num"><?= count($services) ?></div>
-              <div class="ud-stat__label">pôles</div>
-            </div>
-            <div class="ud-stat">
-              <div class="ud-stat__num ud-stat__num--text">Sur mesure</div>
-              <div class="ud-stat__label">accompagnement</div>
-            </div>
-            <div class="ud-stat">
-              <div class="ud-stat__num ud-stat__num--text">À votre écoute</div>
-              <div class="ud-stat__label">proximité</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <?php endforeach; ?>
     </div>
+  </div>
+</section>
 
-    <div
-      class="ud-services-carousel"
-      id="udServicesCarousel"
-      data-interval="4000"
-      role="region"
-      aria-roledescription="carrousel"
-      aria-label="Nos services"
-    >
-      <div
-        class="ud-services-carousel__viewport"
-        id="udServicesViewport"
-        tabindex="0"
-      >
-        <div class="ud-services-carousel__track" id="udServicesTrack">
-          <?php foreach ($services as $s): ?>
-            <?php
-              $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
-            ?>
-            <div class="ud-services-carousel__slide">
-              <article class="ud-service-card ud-service-card--modern ud-service-card--visual-only ud-service-card--carousel h-100<?= !empty($s['coming_soon']) ? ' ud-service-card--soon' : '' ?>" aria-label="<?= h($s['title']) ?>">
-                <div class="ud-service-card__accent" aria-hidden="true"></div>
-                <?php if (!empty($s['coming_soon'])): ?>
-                  <span class="ud-service-card__badge ud-pill ud-pill--soon">Bientôt</span>
-                <?php endif; ?>
-                <div class="ud-service-card__inner">
-                  <div class="ud-service-card__visual">
-                    <img class="ud-service-card__visual-img" src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) ?>" alt="" loading="lazy" decoding="async">
-                  </div>
-                  <div class="ud-service-card__home-head">
-                    <h3 class="ud-service-card__home-title"><?= h($s['title']) ?></h3>
-                  </div>
-                  <div class="ud-service-card__footer">
-                    <?php if (!empty($s['coming_soon'])): ?>
-                      <div class="ud-badge">En cours de création</div>
-                    <?php else: ?>
-                      <a class="btn btn-primary ud-btn ud-btn--wide ud-btn--shine ud-service-card__cta" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-                        Découvrir <span class="ud-arrow" aria-hidden="true">→</span>
-                      </a>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </article>
+<section class="ud-trust py-5" aria-label="Preuves de confiance">
+  <div class="container">
+    <?php
+      $testimonials = testimonials_all();
+      $testimonials = array_slice($testimonials, 0, 3);
+    ?>
+    <div class="ud-trust-band mb-4">
+      <span>Ils nous font confiance</span>
+      <span>Diaspora · Paris · Colombes</span>
+      <span>Accompagnement humain</span>
+      <span>Réponse rapide</span>
+    </div>
+    <div class="row g-3">
+      <?php foreach ($testimonials as $t): ?>
+        <div class="col-12 col-md-6 col-xl-4">
+          <article class="ud-testimonial h-100">
+            <p class="ud-testimonial__text">“<?= h((string)($t['quote'] ?? '')) ?>”</p>
+            <?php if (!empty($t['case_label']) && !empty($t['case_value'])): ?>
+              <div class="ud-testimonial__case"><?= h((string)$t['case_label']) ?> : <?= h((string)$t['case_value']) ?></div>
+            <?php endif; ?>
+            <div class="ud-testimonial__meta">
+              <?= h((string)($t['author'] ?? '')) ?><?= !empty($t['location']) ? ' · ' . h((string)$t['location']) : '' ?>
             </div>
-          <?php endforeach; ?>
+          </article>
         </div>
-      </div>
-      <div class="ud-services-carousel__nav">
-        <div class="ud-services-carousel__dots" id="udServicesDots" aria-label="Index des services"></div>
-      </div>
+      <?php endforeach; ?>
+      <?php if (empty($testimonials)): ?>
+        <div class="col-12">
+          <article class="ud-testimonial h-100">
+            <p class="ud-testimonial__text">“Votre témoignage ici prochainement.”</p>
+            <div class="ud-testimonial__meta">Univers Diaspora</div>
+          </article>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 </section>
@@ -193,9 +193,15 @@ ob_start();
               </div>
             </div>
             <div class="col-12">
+              <div class="ud-form-reassure mb-2">
+                Réponse sous 24h ouvrées · Données traitées de manière confidentielle.
+              </div>
               <button class="btn btn-primary w-100 ud-btn ud-btn--shine" type="submit">
                 Envoyer mon message <span class="ud-arrow" aria-hidden="true">→</span>
               </button>
+              <div class="ud-form-next mt-2">
+                Prochaines étapes : 1) analyse de votre demande, 2) retour par e-mail/téléphone, 3) proposition de solution.
+              </div>
             </div>
           </div>
         </form>
@@ -282,125 +288,6 @@ ob_start();
     </div>
   </div>
 </section>
-<?php if (true): ?>
-<script>
-(() => {
-  const root = document.getElementById('udServicesCarousel');
-  const viewport = document.getElementById('udServicesViewport');
-  const dotsHost = document.getElementById('udServicesDots');
-  if (!root || !viewport || !dotsHost) return;
-
-  const slides = viewport.querySelectorAll('.ud-services-carousel__slide');
-  if (!slides.length) return;
-
-  const intervalMs = Math.max(2200, parseInt(String(root.getAttribute('data-interval') || '4000'), 10) || 4000);
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const behavior = reduced ? 'auto' : 'smooth';
-
-  let index = 0;
-  let timer = null;
-  let dotEls = [];
-
-  /** Aligne le bord gauche de la carte au bord gauche du carrousel (pas de vide avant la 1re carte). */
-  const scrollToSlide = (i) => {
-    const slide = slides[i];
-    if (!slide) return;
-    const left = slide.offsetLeft;
-    viewport.scrollTo({ left: Math.max(0, left), behavior });
-  };
-
-  const setDots = () => {
-    dotEls.forEach((d, k) => d.classList.toggle('is-active', k === index));
-  };
-
-  const goTo = (i) => {
-    index = (i + slides.length) % slides.length;
-    scrollToSlide(index);
-    setDots();
-  };
-
-  const next = () => goTo(index + 1);
-
-  const stop = () => {
-    if (timer !== null) {
-      window.clearInterval(timer);
-      timer = null;
-    }
-  };
-
-  /** Défilement automatique tant qu’au moins 2 services (même si « réduire les animations » : défilement instantané). */
-  const start = () => {
-    stop();
-    if (slides.length < 2) return;
-    if (document.hidden) return;
-    timer = window.setInterval(next, intervalMs);
-  };
-
-  slides.forEach((_, i) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'ud-services-carousel__dot';
-    b.setAttribute('aria-label', 'Afficher le service ' + (i + 1));
-    b.addEventListener('click', () => {
-      goTo(i);
-      stop();
-      window.setTimeout(start, intervalMs);
-    });
-    dotsHost.appendChild(b);
-    dotEls.push(b);
-  });
-  setDots();
-
-  const io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) start();
-        else stop();
-      });
-    },
-    { threshold: 0.06, rootMargin: '0px 0px 12% 0px' }
-  );
-  io.observe(root);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stop();
-    else {
-      const r = root.getBoundingClientRect();
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      if (r.bottom > 0 && r.top < vh) start();
-    }
-  });
-
-  viewport.addEventListener('keydown', (ev) => {
-    if (ev.key === 'ArrowRight') {
-      ev.preventDefault();
-      next();
-      stop();
-      window.setTimeout(start, intervalMs);
-    } else if (ev.key === 'ArrowLeft') {
-      ev.preventDefault();
-      goTo(index - 1);
-      stop();
-      window.setTimeout(start, intervalMs);
-    }
-  });
-
-  if (slides.length > 0) {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => goTo(0));
-    });
-  }
-
-  window.addEventListener('load', () => {
-    const r = root.getBoundingClientRect();
-    const vh = window.innerHeight || document.documentElement.clientHeight;
-    if (slides.length >= 2 && r.bottom > 48 && r.top < vh - 48 && !document.hidden) {
-      start();
-    }
-  });
-})();
-</script>
-<?php endif; ?>
 <?php
 $content = ob_get_clean();
 

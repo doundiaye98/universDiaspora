@@ -70,6 +70,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
       <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-announcements', 'Offres &amp; recrutement', $currentPage === 'admin-announcements') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-testimonials', 'Témoignages', $currentPage === 'admin-testimonials') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
       <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
@@ -101,6 +102,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
         <?= adminNavLink($baseUrl . '/?page=admin-services', 'Services', $currentPage === 'admin-services') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-announcements', 'Offres &amp; recrutement', $currentPage === 'admin-announcements') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-team-members', 'Équipe', $currentPage === 'admin-team-members') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-testimonials', 'Témoignages', $currentPage === 'admin-testimonials') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?>
         <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
