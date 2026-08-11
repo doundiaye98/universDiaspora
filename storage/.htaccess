@@ -1,0 +1,3 @@
+# Stockage privé : refus de toute exposition publique.
+# Les téléchargements éventuels passent par un script PHP dédié avec contrôle d'accès.
+Require all denied

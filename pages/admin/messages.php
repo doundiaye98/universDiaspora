@@ -59,7 +59,7 @@ try {
 
 // Lists
 $contactSql = 'SELECT id, last_name, first_name, email, phone, created_at FROM contact_messages';
-$apptSql = 'SELECT id, office, appointment_at, name, email, phone, status, created_at FROM appointments';
+$apptSql = 'SELECT id, office, appointment_at, name, email, phone, status, service_slug, volet_id, created_at FROM appointments';
 if ($qContact !== '') {
     $contactSql .= ' WHERE last_name LIKE :q OR first_name LIKE :q OR email LIKE :q OR phone LIKE :q';
 }
@@ -198,6 +198,7 @@ ob_start();
               <tr>
                 <th>Date RDV</th>
                 <th>Bureau</th>
+                <th>Service / Volet</th>
                 <th>Nom</th>
                 <th>Email</th>
                 <th>Téléphone</th>
@@ -207,13 +208,27 @@ ob_start();
             </thead>
             <tbody>
               <?php if (empty($apptList)): ?>
-                <tr><td colspan="7" class="text-muted">Aucune demande.</td></tr>
+                <tr><td colspan="8" class="text-muted">Aucune demande.</td></tr>
               <?php else: ?>
                 <?php foreach ($apptList as $a): ?>
-                  <?php $st = (string)($a['status'] ?? 'pending'); ?>
+                  <?php
+                    $st = (string)($a['status'] ?? 'pending');
+                    $svcSlug = (string)($a['service_slug'] ?? '');
+                    $vId = (string)($a['volet_id'] ?? '');
+                  ?>
                   <tr>
                     <td class="text-nowrap"><?= h(date('d/m/Y H:i', strtotime((string)($a['appointment_at'] ?? 'now')))) ?></td>
                     <td><?= h((string)($a['office'] ?? '')) ?></td>
+                    <td class="small">
+                      <?php if ($svcSlug !== ''): ?>
+                        <div><?= h($svcSlug) ?></div>
+                        <?php if ($vId !== ''): ?>
+                          <div class="text-muted">↳ <?= h($vId) ?></div>
+                        <?php endif; ?>
+                      <?php else: ?>
+                        <span class="text-muted">—</span>
+                      <?php endif; ?>
+                    </td>
                     <td><?= h((string)($a['name'] ?? '')) ?></td>
                     <td class="text-nowrap"><?= h((string)($a['email'] ?? '')) ?></td>
                     <td class="text-nowrap"><?= h((string)($a['phone'] ?? '')) ?></td>

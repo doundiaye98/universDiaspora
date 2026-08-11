@@ -121,20 +121,20 @@ function admin_login_security_config(): array
 function admin_login_attempt_is_limited(PDO $pdo, string $username, ?string $ip = null): bool
 {
     $sec = admin_login_security_config();
-    $sql = 'SELECT COUNT(*) FROM admin_login_attempts WHERE username = :u AND attempted_at >= (NOW() - INTERVAL :w SECOND)';
+    // INTERVAL ne peut pas être un placeholder PDO/MySQL — interpoler un entier strict.
+    $window = max(1, (int)$sec['window']);
+    $sql = 'SELECT COUNT(*) FROM admin_login_attempts WHERE username = :u AND attempted_at >= (NOW() - INTERVAL ' . $window . ' SECOND)';
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':u', $username);
-    $stmt->bindValue(':w', $sec['window'], PDO::PARAM_INT);
     $stmt->execute();
     $userAttempts = (int)$stmt->fetchColumn();
     if ($userAttempts >= $sec['max_attempts']) {
         return true;
     }
     if ($ip !== null && $ip !== '') {
-        $sqlIp = 'SELECT COUNT(*) FROM admin_login_attempts WHERE ip = :ip AND attempted_at >= (NOW() - INTERVAL :w SECOND)';
+        $sqlIp = 'SELECT COUNT(*) FROM admin_login_attempts WHERE ip = :ip AND attempted_at >= (NOW() - INTERVAL ' . $window . ' SECOND)';
         $stmtIp = $pdo->prepare($sqlIp);
         $stmtIp->bindValue(':ip', $ip);
-        $stmtIp->bindValue(':w', $sec['window'], PDO::PARAM_INT);
         $stmtIp->execute();
         $ipAttempts = (int)$stmtIp->fetchColumn();
         if ($ipAttempts >= ($sec['max_attempts'] * 2)) {

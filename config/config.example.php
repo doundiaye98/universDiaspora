@@ -10,6 +10,11 @@ return [
         'name' => 'Univers Diaspora',
         'base_url' => 'http://localhost/universDiaspora',
         /**
+         * Environnement courant : 'dev' (affiche les erreurs PHP) ou 'production'
+         * (masque les erreurs et les journalise). À définir en production.
+         */
+        'env' => 'dev',
+        /**
          * Segment d’URL avant /assets/ (fichiers physiques toujours dans public/assets/).
          * - Par défaut « public » → URLs du type {base_url}/public/assets/img/...
          * - Si la racine web pointe déjà vers le dossier public/ (Apache/Nginx), mettre '' :
@@ -76,7 +81,16 @@ return [
             'uses_audience_measurement' => false,
         ],
     ],
+    // Coordonnées page « Offres & recrutement » + notifications candidatures.
+    'offres_recrutement' => [
+        'email' => 'rh@universdiasporas.com',
+        'phones' => [
+            '0970707059',
+            '0660288341',
+        ],
+    ],
     'mail' => [
+        // Obligatoire pour recevoir les candidatures (CV + lettre PDF) sur l’e-mail RH.
         'enable' => false,
         // mail = PHP mail() | smtp = serveur SMTP (recommandé en production)
         'transport' => 'mail',

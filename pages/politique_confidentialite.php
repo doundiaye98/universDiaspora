@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/legal.php';
 
 $config = require __DIR__ . '/../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
 $appName = (string)($config['app']['name'] ?? 'Univers Diaspora');
 $legal = legal_config($config);
 $pub = is_array($legal['publisher'] ?? null) ? $legal['publisher'] : [];

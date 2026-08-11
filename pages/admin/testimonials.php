@@ -6,7 +6,8 @@ $baseUrl = rtrim($config['app']['base_url'], '/');
 admin_require_login($baseUrl);
 
 $pdo = db();
-$rows = testimonials_all($pdo);
+$rows = testimonials_all($pdo, false);
+$pendingCount = count(array_filter($rows, static fn(array $r): bool => empty($r['is_published'])));
 $editId = (int)($_GET['edit'] ?? 0);
 $edit = null;
 foreach ($rows as $r) {
@@ -21,7 +22,12 @@ ob_start();
 ?>
 <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
   <div class="d-flex justify-content-between align-items-end gap-3 mb-3">
-    <p class="ud-admin-page-lead text-muted mb-0">Gérez les témoignages affichés sur l’accueil.</p>
+    <p class="ud-admin-page-lead text-muted mb-0">
+      Gérez les témoignages affichés sur l’accueil.
+      <?php if ($pendingCount > 0): ?>
+        <span class="badge text-bg-warning ms-1"><?= (int)$pendingCount ?> en attente</span>
+      <?php endif; ?>
+    </p>
     <a class="btn btn-primary ud-btn ud-btn--shine" href="<?= h($baseUrl) ?>/?page=admin-testimonials&edit=new">+ Nouveau témoignage</a>
   </div>
 
@@ -35,14 +41,22 @@ ob_start();
         <div class="table-responsive">
           <table class="table ud-admin-table mb-0">
             <thead>
-              <tr><th>Ordre</th><th>Auteur</th><th>Extrait</th><th></th></tr>
+              <tr><th>Statut</th><th>Ordre</th><th>Auteur</th><th>Extrait</th><th></th></tr>
             </thead>
             <tbody>
             <?php if (empty($rows)): ?>
-              <tr><td colspan="4" class="text-muted">Aucun témoignage.</td></tr>
+              <tr><td colspan="5" class="text-muted">Aucun témoignage.</td></tr>
             <?php else: ?>
               <?php foreach ($rows as $r): ?>
-                <tr>
+                <?php $isPub = !empty($r['is_published']); ?>
+                <tr class="<?= $isPub ? '' : 'table-warning' ?>">
+                  <td>
+                    <?php if ($isPub): ?>
+                      <span class="badge text-bg-success">Publié</span>
+                    <?php else: ?>
+                      <span class="badge text-bg-warning text-dark">En attente</span>
+                    <?php endif; ?>
+                  </td>
                   <td><?= (int)($r['sort_order'] ?? 0) ?></td>
                   <td class="fw-bold"><?= h((string)($r['author'] ?? '')) ?></td>
                   <td class="text-muted"><?= h(function_exists('mb_strimwidth') ? mb_strimwidth((string)($r['quote'] ?? ''), 0, 56, '…') : substr((string)($r['quote'] ?? ''), 0, 56)) ?></td>
@@ -92,6 +106,12 @@ ob_start();
                 <label class="form-label">Localisation</label>
                 <input class="form-control" name="location" value="<?= h((string)($form['location'] ?? '')) ?>" placeholder="Paris 18">
               </div>
+              <?php if (!empty($form['submitter_email'])): ?>
+                <div class="col-12">
+                  <label class="form-label text-muted">E-mail visiteur (non publié)</label>
+                  <input class="form-control" type="email" value="<?= h((string)$form['submitter_email']) ?>" readonly disabled>
+                </div>
+              <?php endif; ?>
               <div class="col-md-6">
                 <label class="form-label">Label cas</label>
                 <input class="form-control" name="case_label" value="<?= h((string)($form['case_label'] ?? '')) ?>" placeholder="Cas concret">

@@ -6,7 +6,7 @@ return [
         'slug' => 'conseils-accompagnements',
         'title' => 'Conseils',
         'description' => 'Coaching, orientation et conseils experts pour structurer vos projets.',
-        'icon' => 'univers-diasporas-icone-conseils.png',
+        'icon' => 'icon-conseils-accompagnements.jpg',
         'bullets' => [
             'Coaching personnel',
             'Suivi projets',
@@ -19,7 +19,7 @@ return [
         'slug' => 'immobilier-btp',
         'title' => 'Immobilier & BTP',
         'description' => 'Achat, vente, location et suivi de travaux en toute sérénité.',
-        'icon' => 'univers-diasporas-icone-immobilier.png',
+        'icon' => 'icon-immobilier-btp.jpg',
         'bullets' => [
             'Achats immobiliers',
             'Ventes immobilières',
@@ -32,8 +32,8 @@ return [
         'slug' => 'voyages',
         'title' => 'Voyages',
         'description' => 'Billets, hôtels et séjours organisés au meilleur rapport qualité/prix.',
-        'icon' => 'univers-diasporas-icone-voyages.png',
-        'external_url' => 'https://voyages.universdiaspora.com/',
+        'icon' => 'icon-voyages.jpg',
+        'external_url' => 'https://www.terangavoyages.com/',
         'bullets' => [
             "Billets d'avions",
             'Réservations hôtels',
@@ -46,7 +46,7 @@ return [
         'slug' => 'creation-gestion-d-entreprises',
         'title' => 'Entreprises',
         'description' => 'Création, gestion et accompagnement administratif de votre activité.',
-        'icon' => 'univers-diasporas-icone-entreprises.png',
+        'icon' => 'icon-creation-gestion-d-entreprises.jpg',
         'bullets' => [
             "Création d'entreprise",
             'Gestion comptable',
@@ -59,7 +59,7 @@ return [
         'slug' => 'transports',
         'title' => 'Transports',
         'description' => 'Véhicules, logistique, déménagement et envoi de colis simplifiés.',
-        'icon' => 'univers-diasporas-icone-transports.png',
+        'icon' => 'icon-transports.jpg',
         'bullets' => [
             'Achat véhicules',
             'Ventes véhicules',
@@ -72,7 +72,7 @@ return [
         'slug' => 'assistances-administratives',
         'title' => 'Assistances administratives',
         'description' => 'Dossiers, documents, rendez-vous et accompagnement dans vos démarches.',
-        'icon' => 'univers-diasporas-icone-assistances.png',
+        'icon' => 'icon-assistances-administratives.jpg',
         'bullets' => [
             'Dépôts dossiers',
             'Rédaction documents',
@@ -85,7 +85,7 @@ return [
         'slug' => 'formations-emplois',
         'title' => 'Formation & Emplois',
         'description' => 'Orientation, formation et coaching pour réussir votre parcours.',
-        'icon' => 'univers-diasporas-icone-formations.png',
+        'icon' => 'icon-formations-emplois.jpg',
         'bullets' => [
             'Orientation scolaire',
             'Formation pro',
@@ -98,7 +98,7 @@ return [
         'slug' => 'services-a-la-personne',
         'title' => 'Services à la personne',
         'description' => 'Conciergerie, aide à domicile et services du quotidien sur-mesure.',
-        'icon' => 'univers-diasporas-icone-personnes.png',
+        'icon' => 'icon-services-a-la-personne.jpg',
         'bullets' => [
             'Conciergerie privée',
             'Aide ménagère',
@@ -111,7 +111,7 @@ return [
         'slug' => 'assurances-credits',
         'title' => 'Assurances & Credits',
         'description' => 'Solutions de financement et d’assurances adaptées à votre situation.',
-        'icon' => 'univers-diasporas-icone-assurances.png',
+        'icon' => 'icon-assurances-credits.jpg',
         'bullets' => [
             'Crédit bancaire',
             'Assurance santé',
@@ -124,7 +124,7 @@ return [
         'slug' => 'informatiques',
         'title' => 'Informatiques',
         'description' => 'Sites web, maintenance et assistance pour digitaliser votre activité.',
-        'icon' => 'univers-diasporas-icone-informatiques.png',
+        'icon' => 'icon-informatiques.jpg',
         'bullets' => [
             'Création sites',
             'Assistance technique',
@@ -136,8 +136,9 @@ return [
     [
         'slug' => 'supermarket',
         'title' => 'Supermarket',
-        'description' => 'Une boutique pratique pour vos achats du quotidien (bientôt).',
-        'icon' => 'univers-diasporas-icone-supermarket.png',
+        'description' => 'Boutique en ligne Yombal Market : produits locaux, épicerie et livraison.',
+        'icon' => 'icon-supermarket.jpg',
+        'external_url' => 'https://yombalmarket.com/',
         'bullets' => [
             'Produits alimentaires',
             'Produits cosmétiques',
@@ -145,13 +146,12 @@ return [
             'Prix abordables',
             'Boutique en ligne',
         ],
-        'coming_soon' => true,
     ],
     [
         'slug' => 'bien-d-autres-services',
         'title' => 'Autres services',
         'description' => 'Événements, beauté, traiteur, locations et bien plus encore.',
-        'icon' => 'univers-diasporas-icone-autres.png',
+        'icon' => 'icon-bien-d-autres-services.jpg',
         'bullets' => [
             'Organisation fêtes',
             'Coiffure beauté',
@@ -161,4 +161,3 @@ return [
         ],
     ],
 ];
-

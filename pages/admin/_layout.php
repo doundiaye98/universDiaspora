@@ -14,7 +14,7 @@ if ($adminHeading === '') {
 }
 
 $config = require __DIR__ . '/../../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
 
 admin_require_login($baseUrl);
 $csrf = admin_csrf_token();
@@ -75,6 +75,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
       <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
       <?php if ($canManageAdmins): ?><?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?><?php endif; ?>
       <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
+      <?= adminNavLink($baseUrl . '/?page=admin-ai-conversations', 'Conversations IA', $currentPage === 'admin-ai-conversations') ?>
       <div class="ud-admin-nav__divider"></div>
       <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
       <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>
@@ -107,6 +108,7 @@ function adminNavLink(string $href, string $label, bool $active = false, bool $d
         <?= adminNavLink($baseUrl . '/?page=admin-job-applications', 'Candidatures', $currentPage === 'admin-job-applications') ?>
         <?php if ($canManageAdmins): ?><?= adminNavLink($baseUrl . '/?page=admin-admins', 'Administrateurs', $currentPage === 'admin-admins') ?><?php endif; ?>
         <?= adminNavLink($baseUrl . '/?page=admin-messages', 'Inbox', $currentPage === 'admin-messages') ?>
+        <?= adminNavLink($baseUrl . '/?page=admin-ai-conversations', 'Conversations IA', $currentPage === 'admin-ai-conversations') ?>
         <div class="ud-admin-nav__divider"></div>
         <?= adminNavLink($baseUrl . '/', 'Voir le site') ?>
         <?= adminNavLink($baseUrl . '/?action=admin-logout', 'Déconnexion', false, true) ?>

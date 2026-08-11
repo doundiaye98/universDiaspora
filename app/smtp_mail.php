@@ -55,7 +55,10 @@ function ud_smtp_dot_stuff(string $body): string
     return implode("\r\n", $out);
 }
 
-function ud_mail_via_smtp(array $mail, string $to, string $subject, string $body): bool
+/**
+ * @param array{content_type?:string, reply_to?:string} $opts
+ */
+function ud_mail_via_smtp(array $mail, string $to, string $subject, string $body, array $opts = []): bool
 {
     $smtp = $mail['smtp'] ?? [];
     $host = trim((string)($smtp['host'] ?? ''));
@@ -172,13 +175,21 @@ function ud_mail_via_smtp(array $mail, string $to, string $subject, string $body
     }
 
     $subjectEnc = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $contentType = (string)($opts['content_type'] ?? 'text/plain; charset=UTF-8');
+    $transferEnc = str_starts_with($contentType, 'multipart/')
+        ? ''
+        : "Content-Transfer-Encoding: 8bit\r\n";
+
     $headers =
         "From: {$from}\r\n" .
         "To: {$to}\r\n" .
         "Subject: {$subjectEnc}\r\n" .
-        "MIME-Version: 1.0\r\n" .
-        "Content-Type: text/plain; charset=UTF-8\r\n" .
-        "Content-Transfer-Encoding: 8bit\r\n";
+        "MIME-Version: 1.0\r\n";
+    $replyTo = trim((string)($opts['reply_to'] ?? ''));
+    if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+        $headers .= 'Reply-To: ' . $replyTo . "\r\n";
+    }
+    $headers .= "Content-Type: {$contentType}\r\n" . $transferEnc;
 
     $payload = $headers . "\r\n" . ud_smtp_dot_stuff($body) . "\r\n.";
     fwrite($fp, $payload . "\r\n");

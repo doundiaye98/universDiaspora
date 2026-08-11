@@ -1,10 +1,30 @@
 # Secrets locaux (ne jamais commiter)
 /config/config.local.php
+/config/config.wamp.php
 
 # Fichiers candidatures (PDF) — ne pas versionner
 /storage/candidatures/*
 !/storage/candidatures/.gitkeep
 
+# Logs PHP (générés à l'exécution)
+/storage/logs/*
+!/storage/logs/.gitkeep
+
 # Photos équipe (upload admin)
 /public/assets/img/team/*
 !/public/assets/img/team/.gitkeep
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Dossier de travail Cursor / agents
+/terminals/
+/agent-transcripts/
+
+# Dump SQL personnels
+/sql/*.local.sql
+/sql/*.backup.sql

@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . '/app/bootstrap.php';
 require __DIR__ . '/app/http.php';
 require __DIR__ . '/app/db.php';
 require __DIR__ . '/app/admin.php';
+require __DIR__ . '/app/transit.php';
 require __DIR__ . '/app/services.php';
 require __DIR__ . '/app/announcements.php';
 require __DIR__ . '/app/job_applications.php';
@@ -29,8 +31,17 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
         'email' => post('email'),
         'phone' => post('phone'),
         'message' => post('message'),
+        'service_slug' => post('service_slug'),
+        'volet_id' => post('volet_id'),
         'website' => post('website'), // honeypot
     ];
+
+    if ($old['service_slug'] !== '' && preg_match('/^[a-z0-9-]{1,120}$/', $old['service_slug']) !== 1) {
+        $old['service_slug'] = '';
+    }
+    if ($old['volet_id'] !== '' && preg_match('/^[a-z0-9-]{1,120}$/', $old['volet_id']) !== 1) {
+        $old['volet_id'] = '';
+    }
 
     $errors = [];
     if ($old['website'] !== '') $errors['website'] = 'Spam détecté.';
@@ -51,9 +62,25 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
         exit;
     }
 
+    if (trim($old['message']) === '' && $old['service_slug'] !== '') {
+        $apptCtx = appointment_service_context($old['service_slug'], $old['volet_id']);
+        if ($apptCtx !== null) {
+            $old['message'] = appointment_build_message(
+                $apptCtx['service_title'],
+                $apptCtx['volet_label'],
+                $old['office'],
+                $old['date'],
+                $old['time']
+            );
+        }
+    }
+
     try {
         $pdo = db();
-        $stmt = $pdo->prepare('INSERT INTO appointments (office, appointment_at, name, email, phone, message, ip, user_agent) VALUES (:office, :appointment_at, :name, :email, :phone, :message, :ip, :ua)');
+        $stmt = $pdo->prepare(
+            'INSERT INTO appointments (office, appointment_at, name, email, phone, message, service_slug, volet_id, ip, user_agent)
+             VALUES (:office, :appointment_at, :name, :email, :phone, :message, :service_slug, :volet_id, :ip, :ua)'
+        );
         $stmt->execute([
             ':office' => $old['office'],
             ':appointment_at' => $dt ? $dt->format('Y-m-d H:i:s') : null,
@@ -61,6 +88,8 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
             ':email' => $old['email'],
             ':phone' => $old['phone'],
             ':message' => $old['message'],
+            ':service_slug' => $old['service_slug'] !== '' ? $old['service_slug'] : null,
+            ':volet_id' => $old['volet_id'] !== '' ? $old['volet_id'] : null,
             ':ip' => $_SERVER['REMOTE_ADDR'] ?? null,
             ':ua' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
         ]);
@@ -72,10 +101,19 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
             if ($mailTo !== '') {
                 $office = (string)$old['office'];
                 $subject = '[RDV] Nouveau rendez-vous - ' . $office;
+                $contextLine = '';
+                if ($old['service_slug'] !== '') {
+                    $contextLine = 'Service: ' . $old['service_slug'];
+                    if ($old['volet_id'] !== '') {
+                        $contextLine .= ' / Volet: ' . $old['volet_id'];
+                    }
+                    $contextLine .= "\n";
+                }
                 $body =
                     "Nouveau rendez-vous reçu.\n\n" .
                     'Bureau: ' . $office . "\n" .
-                    'Date/heure: ' . ($dt ? $dt->format('Y-m-d H:i') : '') . "\n\n" .
+                    'Date/heure: ' . ($dt ? $dt->format('Y-m-d H:i') : '') . "\n" .
+                    $contextLine . "\n" .
                     'Nom: ' . (string)$old['name'] . "\n" .
                     'Email: ' . (string)$old['email'] . "\n" .
                     'Téléphone: ' . (string)$old['phone'] . "\n\n" .
@@ -87,10 +125,10 @@ if (($_GET['action'] ?? '') === 'appointment' && $_SERVER['REQUEST_METHOD'] === 
         }
 
         $_SESSION['flash'] = ['success' => 'Rendez-vous envoyé avec succès. Merci !'];
-        redirect('./?page=rendez-vous');
+        redirect(ud_appointment_url(ud_site_base_url()));
     } catch (Throwable $e) {
         $_SESSION['flash'] = ['error' => "Impossible d'envoyer votre demande de rendez-vous. Réessayez plus tard."];
-        redirect('./?page=rendez-vous');
+        redirect(ud_appointment_url(ud_site_base_url()));
     }
 }
 
@@ -133,7 +171,14 @@ if (($_GET['action'] ?? '') === 'admin-login' && $_SERVER['REQUEST_METHOD'] === 
         $_SESSION['flash'] = ['success' => 'Connexion réussie.'];
         redirect('./?page=admin');
     } catch (Throwable $e) {
-        $_SESSION['flash'] = ['error' => 'Impossible de se connecter.'];
+        @error_log('[admin-login] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        $msg = $e->getMessage();
+        $isDbAuth = str_contains($msg, '1045') || stripos($msg, 'Access denied') !== false;
+        $_SESSION['flash'] = [
+            'error' => $isDbAuth
+                ? 'Base MySQL inaccessible (identifiants DB incorrects dans config/config.local.php). Corrigez db.user / db.pass via hPanel, puis rechargez /health.php.'
+                : 'Impossible de se connecter (erreur serveur). Vérifiez /health.php puis relancez /reset_admin.php.',
+        ];
         redirect('./?page=admin-login');
     }
 }
@@ -617,6 +662,84 @@ if (($_GET['action'] ?? '') === 'admin-user-save' && $_SERVER['REQUEST_METHOD'] 
     redirect('./?page=admin-admins');
 }
 
+// Témoignage visiteur (modération admin avant publication)
+if (($_GET['action'] ?? '') === 'testimonial-submit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $old = [
+        'quote' => post('quote'),
+        'author' => post('author'),
+        'location' => post('location'),
+        'email' => post('email'),
+        'consent' => post('consent'),
+        'privacy' => post('privacy'),
+        'website' => post('website'),
+    ];
+
+    $errors = [];
+    if ($old['website'] !== '') {
+        redirect('./#temoignages');
+    }
+    if ($old['quote'] === '' || mb_strlen($old['quote']) < 20) {
+        $errors['quote'] = 'Votre commentaire doit contenir au moins 20 caractères.';
+    } elseif (mb_strlen($old['quote']) > 2000) {
+        $errors['quote'] = 'Commentaire trop long (2000 caractères max.).';
+    }
+    if ($old['author'] === '' || mb_strlen($old['author']) > 120) {
+        $errors['author'] = 'Veuillez indiquer votre prénom ou pseudo (120 caractères max.).';
+    }
+    if ($old['location'] !== '' && mb_strlen($old['location']) > 120) {
+        $errors['location'] = 'Localisation trop longue.';
+    }
+    if ($old['email'] !== '' && !filter_var($old['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'E-mail invalide.';
+    }
+    if ($old['consent'] !== '1') {
+        $errors['consent'] = 'Consentement obligatoire.';
+    }
+    if ($old['privacy'] !== '1') {
+        $errors['privacy'] = 'Confirmation obligatoire.';
+    }
+
+    if (!empty($errors)) {
+        $_SESSION['testimonial_errors'] = $errors;
+        $_SESSION['testimonial_old'] = $old;
+        redirect('./#temoignages');
+    }
+
+    try {
+        $pdo = db();
+        testimonials_submit_visitor(
+            $old['quote'],
+            $old['author'],
+            $old['location'],
+            $old['email'],
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+            $pdo
+        );
+        try {
+            $config = require __DIR__ . '/config/config.php';
+            $mailTo = (string)($config['mail']['to'] ?? '');
+            if ($mailTo !== '') {
+                $subject = '[Témoignage] Nouveau commentaire à modérer';
+                $body =
+                    "Un visiteur a laissé un témoignage (en attente de publication).\n\n" .
+                    'Auteur affiché : ' . $old['author'] . "\n" .
+                    ($old['location'] !== '' ? 'Localisation : ' . $old['location'] . "\n" : '') .
+                    ($old['email'] !== '' ? 'E-mail : ' . $old['email'] . "\n" : '') .
+                    "\nCommentaire :\n" . $old['quote'] . "\n\n" .
+                    'Modération : ' . rtrim((string)($config['app']['base_url'] ?? ''), '/') . '/?page=admin-testimonials' . "\n";
+                ud_mail_try_send($mailTo, $subject, $body);
+            }
+        } catch (Throwable $e) {
+            // Email optionnel
+        }
+        $_SESSION['flash'] = ['success' => 'Merci ! Votre témoignage a été reçu. Il sera publié après validation par notre équipe.'];
+    } catch (Throwable $e) {
+        $_SESSION['flash'] = ['error' => 'Impossible d’enregistrer votre témoignage. Réessayez plus tard.'];
+    }
+    redirect('./#temoignages');
+}
+
 // Contact POST handler
 if (($_GET['action'] ?? '') === 'contact' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $old = [
@@ -768,22 +891,27 @@ if (($_GET['action'] ?? '') === 'job-application' && $_SERVER['REQUEST_METHOD'] 
             $cvRel,
             $coverRel
         );
+        $mailRhOk = false;
         try {
-            $mailTo = (string)($config['mail']['to'] ?? '');
-            if ($mailTo !== '' && $ann !== null) {
-                $subject = '[Candidature] ' . ($ann['title'] ?? 'Recrutement');
-                $body =
-                    "Nouvelle candidature reçue.\n\n" .
-                    'Poste : ' . ($ann['title'] ?? '') . "\n" .
-                    'Nom : ' . $old['full_name'] . "\n" .
-                    'Email : ' . $old['email'] . "\n" .
-                    'Téléphone : ' . ($old['phone'] !== '' ? $old['phone'] : '—') . "\n\n" .
-                    ($old['message'] !== '' ? "Message :\n" . $old['message'] . "\n\n" : '') .
-                    'Liste des candidatures : ' . $baseUrl . '/?page=admin-job-applications' . "\n";
-                ud_mail_try_send($mailTo, $subject, $body);
+            if ($ann !== null) {
+                $cvAbs = job_applications_abs_path($cvRel);
+                $coverAbs = job_applications_abs_path($coverRel);
+                if ($cvAbs !== null && $coverAbs !== null) {
+                    $mailRhOk = ud_mail_job_application_to_rh(
+                        $config,
+                        $ann,
+                        $old['full_name'],
+                        $old['email'],
+                        $old['phone'],
+                        $old['message'],
+                        $cvAbs,
+                        $coverAbs,
+                        $baseUrl
+                    );
+                }
             }
         } catch (Throwable $e) {
-            // Email optionnel
+            $mailRhOk = false;
         }
     } catch (Throwable $e) {
         job_applications_delete_files([$cvRel, $coverRel]);
@@ -791,7 +919,13 @@ if (($_GET['action'] ?? '') === 'job-application' && $_SERVER['REQUEST_METHOD'] 
         redirect('./?page=offres-recrutement&apply=' . $announcementId);
     }
 
-    $_SESSION['flash'] = ['success' => 'Votre candidature a bien été envoyée. Merci !'];
+    if ($mailRhOk) {
+        $_SESSION['flash'] = ['success' => 'Votre candidature a bien été envoyée au service RH (CV et lettre de motivation). Merci !'];
+    } else {
+        $_SESSION['flash'] = [
+            'success' => 'Votre candidature a été enregistrée. Si vous ne recevez pas de confirmation, contactez-nous : l’envoi automatique au service RH n’a pas abouti (vérifiez la configuration e-mail du site).',
+        ];
+    }
     redirect('./?page=offres-recrutement');
 }
 
@@ -804,6 +938,22 @@ if (($_GET['action'] ?? '') === 'ai-chat') {
 
 // Simple router: home or service page by slug
 $page = (string)($_GET['page'] ?? '');
+
+// Anciennes URLs ?page=rendez-vous&service=… → /rendez-vous/slug/volet
+if ($page === 'rendez-vous') {
+    if (!str_starts_with(ud_request_path(), '/rendez-vous')) {
+        $svc = trim((string)($_GET['service'] ?? ''));
+        $vol = trim((string)($_GET['volet'] ?? ''));
+        $hasService = $svc !== '' && preg_match('/^[a-z0-9-]{1,120}$/', $svc) === 1;
+        $hasVolet = $vol !== '' && preg_match('/^[a-z0-9-]{1,120}$/', $vol) === 1;
+        redirect(ud_appointment_url(
+            ud_site_base_url(),
+            $hasService ? $svc : null,
+            $hasVolet ? $vol : null
+        ));
+    }
+}
+
 if ($page === '' || $page === 'home') {
     require __DIR__ . '/pages/home.php';
     exit;
@@ -817,11 +967,13 @@ $specialPages = [
     'mentions-legales' => __DIR__ . '/pages/mentions_legales.php',
     'politique-confidentialite' => __DIR__ . '/pages/politique_confidentialite.php',
     'offres-recrutement' => __DIR__ . '/pages/offres_recrutement.php',
+    'immobilier-btp' => __DIR__ . '/pages/immobilier_btp.php',
     'admin-login' => __DIR__ . '/pages/admin/login.php',
     'admin' => __DIR__ . '/pages/admin/dashboard.php',
     'admin-services' => __DIR__ . '/pages/admin/services.php',
     'admin-admins' => __DIR__ . '/pages/admin/admins.php',
     'admin-messages' => __DIR__ . '/pages/admin/messages.php',
+    'admin-ai-conversations' => __DIR__ . '/pages/admin/ai_conversations.php',
     'admin-announcements' => __DIR__ . '/pages/admin/announcements.php',
     'admin-job-applications' => __DIR__ . '/pages/admin/job_applications.php',
     'admin-team-members' => __DIR__ . '/pages/admin/team_members.php',

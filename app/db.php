@@ -29,6 +29,8 @@ function ensureContactSchema(PDO $pdo): void
           `email` VARCHAR(190) NOT NULL,
           `phone` VARCHAR(50) NULL,
           `message` TEXT NULL,
+          `service_slug` VARCHAR(120) NULL,
+          `volet_id` VARCHAR(120) NULL,
           `status` VARCHAR(20) NOT NULL DEFAULT \'pending\',
           `confirmed_at` DATETIME NULL,
           `confirmed_by` VARCHAR(80) NULL,
@@ -38,36 +40,39 @@ function ensureContactSchema(PDO $pdo): void
           PRIMARY KEY (`id`),
           KEY `idx_created_at` (`created_at`),
           KEY `idx_appointment_at` (`appointment_at`),
-          KEY `idx_email` (`email`)
+          KEY `idx_email` (`email`),
+          KEY `idx_appointments_service_slug` (`service_slug`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
 
     // If appointments table already exists (created earlier), add missing columns.
-    $hasStatus = (int)$pdo->query(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'status'"
-    )->fetchColumn();
-    if ($hasStatus === 0) {
-        $pdo->exec("ALTER TABLE appointments ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'");
-    }
-    $hasConfirmedAt = (int)$pdo->query(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'confirmed_at'"
-    )->fetchColumn();
-    if ($hasConfirmedAt === 0) {
-        $pdo->exec("ALTER TABLE appointments ADD COLUMN confirmed_at DATETIME NULL");
-    }
-    $hasConfirmedBy = (int)$pdo->query(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = 'confirmed_by'"
-    )->fetchColumn();
-    if ($hasConfirmedBy === 0) {
-        $pdo->exec("ALTER TABLE appointments ADD COLUMN confirmed_by VARCHAR(80) NULL");
+    $apptCols = [
+        'status' => "VARCHAR(20) NOT NULL DEFAULT 'pending'",
+        'confirmed_at' => 'DATETIME NULL',
+        'confirmed_by' => 'VARCHAR(80) NULL',
+        'service_slug' => 'VARCHAR(120) NULL',
+        'volet_id' => 'VARCHAR(120) NULL',
+    ];
+    foreach ($apptCols as $colName => $colDef) {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND COLUMN_NAME = " . $pdo->quote($colName)
+        )->fetchColumn();
+        if ($has === 0) {
+            $pdo->exec('ALTER TABLE `appointments` ADD COLUMN `' . $colName . '` ' . $colDef);
+        }
     }
 
-    // Index on status for faster filtering
-    $hasStatusIdx = (int)$pdo->query(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND INDEX_NAME = 'idx_appointments_status'"
-    )->fetchColumn();
-    if ($hasStatusIdx === 0) {
-        $pdo->exec("ALTER TABLE appointments ADD INDEX idx_appointments_status (status)");
+    $apptIdx = [
+        'idx_appointments_status' => '(status)',
+        'idx_appointments_service_slug' => '(service_slug)',
+    ];
+    foreach ($apptIdx as $idxName => $cols) {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'appointments' AND INDEX_NAME = " . $pdo->quote($idxName)
+        )->fetchColumn();
+        if ($has === 0) {
+            $pdo->exec('ALTER TABLE appointments ADD INDEX ' . $idxName . ' ' . $cols);
+        }
     }
 
     $pdo->exec(
@@ -221,6 +226,25 @@ function ensureContactSchema(PDO $pdo): void
     );
 
     $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS `ai_conversations` (
+          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `session_id` VARCHAR(64) NULL,
+          `ip` VARCHAR(45) NULL,
+          `user_agent` VARCHAR(255) NULL,
+          `question` VARCHAR(2000) NOT NULL,
+          `answer` VARCHAR(5000) NOT NULL,
+          `intent` VARCHAR(80) NULL,
+          `matched_service_slug` VARCHAR(120) NULL,
+          `matched_volet_id` VARCHAR(120) NULL,
+          `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_ai_conv_created` (`created_at`),
+          KEY `idx_ai_conv_session` (`session_id`),
+          KEY `idx_ai_conv_service` (`matched_service_slug`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+    );
+
+    $pdo->exec(
         'CREATE TABLE IF NOT EXISTS `testimonials` (
           `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
           `quote` TEXT NOT NULL,
@@ -237,6 +261,20 @@ function ensureContactSchema(PDO $pdo): void
           KEY `idx_testimonials_published` (`is_published`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
     );
+
+    $testimonialCols = [
+        'submitter_email' => 'VARCHAR(190) NULL',
+        'ip' => 'VARCHAR(45) NULL',
+        'user_agent' => 'VARCHAR(255) NULL',
+    ];
+    foreach ($testimonialCols as $colName => $colDef) {
+        $has = (int)$pdo->query(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'testimonials' AND COLUMN_NAME = " . $pdo->quote($colName)
+        )->fetchColumn();
+        if ($has === 0) {
+            $pdo->exec('ALTER TABLE `testimonials` ADD COLUMN `' . $colName . '` ' . $colDef);
+        }
+    }
 
     // Seed initial admin user if missing (credentials from config) — jamais avec mot de passe par défaut faible.
     $config = require __DIR__ . '/../config/config.php';
@@ -286,6 +324,44 @@ function ensureContactSchema(PDO $pdo): void
                 }
             }
         }
+    }
+
+    // Liens externes canoniques (mises à jour même si la table services est déjà peuplée)
+    $pdo->prepare(
+        'UPDATE services SET external_url = :url, coming_soon = 0 WHERE slug = :slug'
+    )->execute([
+        ':url' => 'https://www.terangavoyages.com/',
+        ':slug' => 'voyages',
+    ]);
+    $pdo->prepare(
+        'UPDATE services
+         SET external_url = :url, coming_soon = 0,
+             description = :desc
+         WHERE slug = :slug'
+    )->execute([
+        ':url' => 'https://yombalmarket.com/',
+        ':desc' => 'Boutique en ligne Yombal Market : produits locaux, épicerie et livraison.',
+        ':slug' => 'supermarket',
+    ]);
+
+    // Icônes photo canoniques (icon-{slug}.jpg) — sync même si la table est déjà peuplée
+    $iconSync = [
+        'conseils-accompagnements' => 'icon-conseils-accompagnements.jpg',
+        'immobilier-btp' => 'icon-immobilier-btp.jpg',
+        'voyages' => 'icon-voyages.jpg',
+        'creation-gestion-d-entreprises' => 'icon-creation-gestion-d-entreprises.jpg',
+        'transports' => 'icon-transports.jpg',
+        'assistances-administratives' => 'icon-assistances-administratives.jpg',
+        'formations-emplois' => 'icon-formations-emplois.jpg',
+        'services-a-la-personne' => 'icon-services-a-la-personne.jpg',
+        'assurances-credits' => 'icon-assurances-credits.jpg',
+        'informatiques' => 'icon-informatiques.jpg',
+        'supermarket' => 'icon-supermarket.jpg',
+        'bien-d-autres-services' => 'icon-bien-d-autres-services.jpg',
+    ];
+    $iconStmt = $pdo->prepare('UPDATE services SET icon = :icon WHERE slug = :slug');
+    foreach ($iconSync as $slug => $iconFile) {
+        $iconStmt->execute([':icon' => $iconFile, ':slug' => $slug]);
     }
 
     require_once __DIR__ . '/team_members.php';
@@ -354,7 +430,13 @@ function db(): PDO
         ensureContactSchema($pdo);
         return $pdo;
     } catch (PDOException $e) {
-        // If DB doesn't exist yet, create it then retry.
+        $env = (string)($config['app']['env'] ?? 'dev');
+        // Hostinger : la base est créée dans hPanel ; CREATE DATABASE est interdit (#1044).
+        if ($env === 'production') {
+            throw $e;
+        }
+
+        // Développement local : créer la base si elle n'existe pas encore.
         $dsnServer = sprintf(
             'mysql:host=%s;port=%d;charset=%s',
             $db['host'],

@@ -106,14 +106,34 @@ function team_members_delete_photo_file(?string $filename): void
 }
 
 /**
+ * Données de repli (fichier data/team.php) si la base est indisponible ou la table absente.
+ *
+ * @return list<array<string,mixed>>
+ */
+function team_members_fallback_data(): array
+{
+    $path = dirname(__DIR__) . '/data/team.php';
+    if (!is_file($path)) {
+        return [];
+    }
+    $seed = require $path;
+    return is_array($seed) ? $seed : [];
+}
+
+/**
  * @return list<array<string,mixed>>
  */
 function team_members_all(PDO $pdo = null): array
 {
-    $pdo = $pdo ?? db();
-    $stmt = $pdo->query('SELECT * FROM team_members ORDER BY sort_order ASC, id ASC');
-    $rows = $stmt->fetchAll();
-    return is_array($rows) ? $rows : [];
+    try {
+        $pdo = $pdo ?? db();
+        $stmt = $pdo->query('SELECT * FROM team_members ORDER BY sort_order ASC, id ASC');
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    } catch (Throwable $e) {
+        error_log('[team_members_all] ' . $e->getMessage());
+        return team_members_fallback_data();
+    }
 }
 
 function team_members_find(int $id, PDO $pdo = null): ?array

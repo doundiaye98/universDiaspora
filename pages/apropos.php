@@ -2,173 +2,160 @@
 declare(strict_types=1);
 
 $config = require __DIR__ . '/../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
+$offices = is_file(__DIR__ . '/../data/offices.php') ? require __DIR__ . '/../data/offices.php' : [];
+if (!is_array($offices)) {
+    $offices = [];
+}
+
+$bgSlides = [];
+foreach (['g1.jpg', 'g2.jpg', 'g3.jpg', 'g4.jpg'] as $bgFile) {
+    $bgPath = __DIR__ . '/../public/assets/img/' . $bgFile;
+    if (is_file($bgPath)) {
+        $bgSlides[] = ud_public_asset_url('img/' . $bgFile, $baseUrl);
+    }
+}
 
 ob_start();
 ?>
-<section class="ud-about-page ud-about-hero py-3 py-md-4 py-lg-5">
-  <div class="container px-3 px-sm-4">
-    <div class="row align-items-center g-4 g-lg-5 mb-4 mb-lg-5">
-      <div class="col-12 col-lg-6">
-        <div class="ud-section-title text-center text-lg-start mb-0">
-          <div class="ud-section-kicker">Univers Diaspora</div>
-          <h1 class="ud-title mb-2">Qui sommes-nous ?</h1>
-          <div class="ud-subtitle mx-auto mx-lg-0" style="max-width: 32rem;">
-            Conseil, accompagnement et services pensés pour la diaspora — avec une approche humaine, concrète et sur mesure.
-          </div>
-          <div class="ud-section-divider mt-3 mx-auto mx-lg-0" aria-hidden="true"></div>
-        </div>
-      </div>
-      <div class="col-12 col-lg-6">
-        <div class="ud-about-intro__visual text-center">
-          <div class="ud-about-intro__frame mx-auto">
-            <img
-              class="ud-about-intro__img img-fluid"
-              src="<?= h(ud_public_asset_url('img/logo-univers-diaspora.jpg', $baseUrl)) ?>"
-              alt="Logo Univers Diaspora"
-              width="420"
-              height="420"
-              loading="eager"
-            >
-          </div>
-        </div>
-      </div>
+<section class="ud-apropos"<?= $bgSlides !== [] ? ' data-ud-apropos-bg' : '' ?>>
+  <?php if ($bgSlides !== []): ?>
+    <div class="ud-apropos__bg" aria-hidden="true">
+      <?php foreach ($bgSlides as $i => $src): ?>
+        <div
+          class="ud-apropos__bg-slide<?= $i === 0 ? ' is-active' : '' ?>"
+          style="background-image:url('<?= h($src) ?>')"
+        ></div>
+      <?php endforeach; ?>
+      <div class="ud-apropos__bg-veil"></div>
     </div>
+  <?php endif; ?>
 
-    <div class="ud-about-statband row g-3 g-md-4 mb-4 mb-lg-5">
-      <div class="col-12 col-md-4">
-        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
-          <div class="ud-about-stat__label">Depuis</div>
-          <div class="ud-about-stat__value">Mars 2024</div>
-          <p class="ud-about-stat__hint mb-0">Une structure jeune, agile et tournée vers l’avenir.</p>
-        </div>
-      </div>
-      <div class="col-12 col-md-4">
-        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
-          <div class="ud-about-stat__label">Notre méthode</div>
-          <div class="ud-about-stat__value">Écoute &amp; proximité</div>
-          <p class="ud-about-stat__hint mb-0">Chaque dossier est pris au sérieux, avec du temps et de la clarté.</p>
-        </div>
-      </div>
-      <div class="col-12 col-md-4">
-        <div class="ud-about-stat ud-surface h-100 text-center text-md-start">
-          <div class="ud-about-stat__label">Ambition</div>
-          <div class="ud-about-stat__value">Projets qui avancent</div>
-          <p class="ud-about-stat__hint mb-0">Personnel, administratif, immobilier, voyages ou entrepreneuriat.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
-      <div class="col-12">
-        <h2 class="ud-about-section-title text-center mb-4">Ce qui nous guide</h2>
-        <div class="row g-4">
-          <div class="col-12 col-md-4">
-            <article class="ud-about-pillar ud-surface h-100">
-              <div class="ud-about-pillar__icon" aria-hidden="true">01</div>
-              <h3 class="ud-about-pillar__title">Notre mission</h3>
-              <p class="ud-about-pillar__text mb-0">
-                Relier et accompagner les membres de la diaspora avec des services adaptés à la réalité de leurs projets,
-                là où ils vivent comme là où ils construisent l’avenir.
-              </p>
-            </article>
-          </div>
-          <div class="col-12 col-md-4">
-            <article class="ud-about-pillar ud-surface h-100">
-              <div class="ud-about-pillar__icon" aria-hidden="true">02</div>
-              <h3 class="ud-about-pillar__title">Nos valeurs</h3>
-              <p class="ud-about-pillar__text mb-0">
-                Solidarité, entraide et mise en valeur des talents : nous croyons qu’une communauté forte naît de gestes concrets
-                et de relations de confiance.
-              </p>
-            </article>
-          </div>
-          <div class="col-12 col-md-4">
-            <article class="ud-about-pillar ud-surface h-100">
-              <div class="ud-about-pillar__icon" aria-hidden="true">03</div>
-              <h3 class="ud-about-pillar__title">Qualité de service</h3>
-              <p class="ud-about-pillar__text mb-0">
-                Des réponses claires, un suivi attentif et le souci du détail — pour que chaque étape soit comprise et maîtrisée.
-              </p>
-            </article>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
-      <div class="col-12 col-xl-10">
-        <div class="ud-about-highlight">
-          <p class="ud-about-highlight__lead mb-0">
-            <strong>Univers Diaspora</strong>, c’est avant tout un partenaire de confiance : nous vous aidons à structurer vos démarches,
-            à anticiper les questions et à avancer sereinement, sans vous laisser seul face à la complexité.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
-      <div class="col-12 col-lg-10">
-        <h2 class="ud-about-section-title text-center mb-3">Ce que nous proposons</h2>
-        <p class="text-center ud-about-lead mx-auto mb-4" style="max-width: 40rem;">
-          Une gamme complète de solutions pour vous accompagner au quotidien et dans vos grands projets.
+  <div class="ud-apropos__inner">
+    <header class="ud-apropos__hero">
+      <div class="container px-3 px-sm-4">
+        <p class="ud-apropos__mark">Univers Diaspora</p>
+        <p class="ud-apropos__promise">Faire de vos rêves une réalité</p>
+        <h1 class="ud-apropos__title">
+          Votre partenaire de confiance<br>
+          <span>pour la diaspora</span>
+        </h1>
+        <p class="ud-apropos__lead">
+          Tous vos services réunis en un seul lieu — conseil, démarches et projets,
+          avec une équipe à Paris 18<sup>e</sup>, Paris 17<sup>e</sup> et Colombes.
         </p>
-        <div class="ud-about-card ud-surface">
-          <ul class="ud-about-gridlist row g-3 list-unstyled mb-4">
-            <li class="col-12 col-sm-6">
-              <div class="ud-about-gridlist__item">
-                <span class="ud-about-gridlist__dot" aria-hidden="true"></span>
-                <span>Conseil et accompagnement pour vos projets personnels et professionnels</span>
+        <div class="ud-apropos__actions">
+          <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
+          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#services">Voir les 12 pôles</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="ud-apropos__body">
+      <div class="container px-3 px-sm-4">
+        <section class="ud-apropos__story" aria-labelledby="ud-apropos-story">
+          <div class="ud-apropos__story-grid">
+            <div>
+              <p class="ud-apropos__kicker">Notre rôle</p>
+              <h2 id="ud-apropos-story" class="ud-apropos__h2">Structurer vos projets, sans jargon inutile</h2>
+              <p class="ud-apropos__p">
+                Depuis mars 2024, Univers Diaspora accompagne les membres de la diaspora
+                dans leurs démarches personnelles, administratives, professionnelles et patrimoniales.
+                Nous clarifions les étapes, préparons les dossiers et restons à vos côtés jusqu’au résultat.
+              </p>
+              <p class="ud-apropos__p">
+                Pas de promesses irréalistes : un cadre professionnel, des interlocuteurs identifiés
+                et un suivi adapté à votre échéancier.
+              </p>
+            </div>
+            <aside class="ud-apropos__aside" aria-label="En bref">
+              <div class="ud-apropos__aside-item">
+                <span class="ud-apropos__aside-label">Depuis</span>
+                <strong>Mars 2024</strong>
               </div>
+              <div class="ud-apropos__aside-item">
+                <span class="ud-apropos__aside-label">Agences</span>
+                <strong>3 bureaux en Île-de-France</strong>
+              </div>
+              <div class="ud-apropos__aside-item">
+                <span class="ud-apropos__aside-label">Contact</span>
+                <strong><a href="mailto:contact@universdiaspora.com">contact@universdiaspora.com</a></strong>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ud-apropos__trust" aria-labelledby="ud-apropos-trust">
+          <p class="ud-apropos__kicker ud-apropos__kicker--on-dark">Engagement</p>
+          <h2 id="ud-apropos-trust" class="ud-apropos__h2 ud-apropos__h2--on-dark">Pourquoi nous faire confiance&nbsp;?</h2>
+          <ul class="ud-apropos__trust-grid">
+            <li>
+              <strong>Équipe expérimentée</strong>
+              <span>À votre écoute, de Paris à votre pays d’origine.</span>
             </li>
-            <li class="col-12 col-sm-6">
-              <div class="ud-about-gridlist__item">
-                <span class="ud-about-gridlist__dot" aria-hidden="true"></span>
-                <span>Assistance administrative</span>
-              </div>
+            <li>
+              <strong>Accompagnement A à Z</strong>
+              <span>Un parcours clair, du premier échange au suivi.</span>
             </li>
-            <li class="col-12 col-sm-6">
-              <div class="ud-about-gridlist__item">
-                <span class="ud-about-gridlist__dot" aria-hidden="true"></span>
-                <span>Services liés à l’immobilier et aux voyages</span>
-              </div>
+            <li>
+              <strong>Solutions adaptées</strong>
+              <span>Chaque dossier est traité selon votre situation réelle.</span>
             </li>
-            <li class="col-12 col-sm-6">
-              <div class="ud-about-gridlist__item">
-                <span class="ud-about-gridlist__dot" aria-hidden="true"></span>
-                <span>Soutien aux initiatives entrepreneuriales</span>
-              </div>
+            <li>
+              <strong>Paiement flexible</strong>
+              <span>Mensualités possibles selon les projets.</span>
             </li>
           </ul>
-          <p class="ud-about-p mb-0">
-            Nous nous engageons à offrir un service de qualité, basé sur la proximité et l’écoute,
-            afin de permettre à chaque membre de la diaspora de concrétiser ses projets et de profiter pleinement
-            des opportunités qui s’offrent à lui. Chez Univers Diaspora, nous mettons tout en œuvre pour créer un environnement
-            propice à la réussite et à l’épanouissement de notre communauté.
-          </p>
-        </div>
-      </div>
-    </div>
+        </section>
 
-    <div class="ud-about-cta ud-surface text-center">
-      <h2 class="ud-about-cta__title mb-2">Envie d’aller plus loin ?</h2>
-      <p class="ud-about-cta__text mx-auto mb-4">
-        Découvrez nos services, rencontrez l’équipe ou écrivez-nous : nous répondons avec attention à chaque message.
-      </p>
-      <div class="d-flex flex-wrap justify-content-center gap-2">
-        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#services">Découvrir nos services</a>
-        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=equipe">Notre équipe</a>
-        <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#contact">Nous contacter</a>
+        <?php if ($offices !== []): ?>
+          <section class="ud-apropos__offices" aria-labelledby="ud-apropos-offices">
+            <p class="ud-apropos__kicker">Présence</p>
+            <h2 id="ud-apropos-offices" class="ud-apropos__h2">Nos agences</h2>
+            <div class="ud-apropos__office-grid">
+              <?php foreach ($offices as $office): ?>
+                <?php if (!is_array($office)) {
+                    continue;
+                } ?>
+                <article class="ud-apropos__office">
+                  <h3 class="ud-apropos__office-name"><?= h((string)($office['short_name'] ?? $office['name'] ?? '')) ?></h3>
+                  <p class="ud-apropos__office-addr"><?= h((string)($office['address'] ?? '')) ?></p>
+                  <?php if (!empty($office['phone_fixe'])): ?>
+                    <p class="ud-apropos__office-tel">Fixe <?= h((string)$office['phone_fixe']) ?></p>
+                  <?php endif; ?>
+                  <?php if (!empty($office['phone_mobile'])): ?>
+                    <p class="ud-apropos__office-tel">Tél <?= h((string)$office['phone_mobile']) ?></p>
+                  <?php endif; ?>
+                </article>
+              <?php endforeach; ?>
+            </div>
+          </section>
+        <?php endif; ?>
+
+        <section class="ud-apropos__cta" aria-labelledby="ud-apropos-cta">
+          <h2 id="ud-apropos-cta" class="ud-apropos__cta-title">Prêt à avancer sur votre projet&nbsp;?</h2>
+          <p class="ud-apropos__cta-text">
+            Un premier échange suffit pour cadrer le besoin et vous orienter vers le bon pôle.
+          </p>
+          <div class="ud-apropos__actions ud-apropos__actions--center">
+            <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
+            <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=equipe">L’équipe</a>
+            <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#contact">Contact</a>
+          </div>
+        </section>
       </div>
     </div>
   </div>
 </section>
+<?php if ($bgSlides !== []): ?>
+<script src="<?= h(ud_public_asset_url('js/ud-apropos-bg.js', $baseUrl)) ?>?v=<?= (int) @filemtime(__DIR__ . '/../public/assets/js/ud-apropos-bg.js') ?>" defer></script>
+<?php endif; ?>
 <?php
 $content = ob_get_clean();
 
 $view = [
     'title' => 'À propos — Univers Diaspora',
-    'meta_description' => 'Univers Diaspora : mission, valeurs et accompagnement sur mesure pour la diaspora — conseil, administratif, immobilier, voyages et entrepreneuriat.',
+    'meta_description' => 'Univers Diaspora : partenaire de confiance pour la diaspora. Conseil, démarches et projets — Paris 18ᵉ, Paris 17ᵉ et Colombes. Faire de vos rêves une réalité.',
     'active' => 'apropos',
     'content' => $content,
 ];

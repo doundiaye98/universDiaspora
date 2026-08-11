@@ -1,0 +1,24 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Surcharge locale WAMP — copiez en config.wamp.php (gitignore).
+ * Appliquée uniquement en développement local, sans modifier config.local.php (Hostinger).
+ */
+return [
+    'app' => [
+        'env' => 'dev',
+    ],
+    'db' => [
+        'host' => '127.0.0.1',
+        'port' => 3306,
+        'name' => 'univers_diaspora',
+        'user' => 'root',
+        'pass' => '',
+        'charset' => 'utf8mb4',
+    ],
+    'admin' => [
+        'username' => 'admin',
+        'password' => 'admin123',
+    ],
+];

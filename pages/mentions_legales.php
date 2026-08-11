@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/legal.php';
 
 $config = require __DIR__ . '/../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
 $appName = (string)($config['app']['name'] ?? 'Univers Diaspora');
 $legal = legal_config($config);
 $pub = is_array($legal['publisher'] ?? null) ? $legal['publisher'] : [];
@@ -53,6 +53,13 @@ ob_start();
           <p class="ud-legal-jump__text">Renvoi vers la politique de confidentialité et vos droits.</p>
         </a>
       </div>
+      <div class="col-12 col-md-4">
+        <a class="ud-legal-jump" href="#legal-conception">
+          <div class="ud-legal-jump__kicker">Section 6</div>
+          <div class="ud-legal-jump__title">Conception &amp; développement</div>
+          <p class="ud-legal-jump__text">Site conçu, développé et maintenu en interne par Univers Diaspora.</p>
+        </a>
+      </div>
     </div>
 
     <div class="row g-4 justify-content-center">
@@ -87,7 +94,15 @@ ob_start();
             les tribunaux français seront seuls compétents, sous réserve des règles de compétence impératives.
           </p>
 
-          <h2 class="h5 mt-4" id="legal-liens">6. Liens utiles</h2>
+          <h2 class="h5 mt-4" id="legal-conception">6. Conception et développement</h2>
+          <p class="ud-about-p mb-0">
+            Le présent site internet, son arborescence, sa charte graphique, son interface, ses interactions et l’ensemble du code source applicatif (front‑end et back‑end)
+            ont été <strong>conçus, développés, intégrés et déployés en interne par l’équipe d’Univers Diaspora</strong>
+            (« Studio Univers Diaspora »). Aucune prestation de conception ou de développement n’a été sous‑traitée.
+            Les éventuels composants tiers (frameworks, bibliothèques, polices typographiques, cartographie) sont utilisés conformément à leurs licences respectives.
+          </p>
+
+          <h2 class="h5 mt-4" id="legal-liens">7. Liens utiles</h2>
           <p class="ud-about-p mb-0">
             <a href="<?= h($baseUrl) ?>/?page=politique-confidentialite">Politique de confidentialité</a>
             <span class="text-muted">&nbsp;·&nbsp;</span>

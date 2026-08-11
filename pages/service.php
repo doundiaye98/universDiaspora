@@ -4,7 +4,7 @@ declare(strict_types=1);
 /** @var string $slug */
 $services = function_exists('services_all') ? services_all() : (require __DIR__ . '/../data/services.php');
 $config = require __DIR__ . '/../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
 
 $service = function_exists('services_find_by_slug') ? services_find_by_slug($slug) : null;
 if ($service === null) {
@@ -13,6 +13,13 @@ if ($service === null) {
             $service = $s;
             break;
         }
+    }
+}
+
+if ($service !== null) {
+    $externalUrl = trim((string)($service['external_url'] ?? ''));
+    if ($externalUrl !== '' && filter_var($externalUrl, FILTER_VALIDATE_URL)) {
+        redirect($externalUrl);
     }
 }
 
@@ -82,272 +89,237 @@ $otherServices = array_values(array_filter($services, static function (array $s)
     return ($s['slug'] ?? '') !== $currentSlug;
 }));
 
+$voletsAll = require __DIR__ . '/../data/service_volets.php';
+$serviceVolets = isset($voletsAll[$currentSlug]) && is_array($voletsAll[$currentSlug])
+    ? $voletsAll[$currentSlug]
+    : [];
+$hasVolets = !empty($serviceVolets);
+
+$serviceDisclaimers = [
+    'assurances-credits' =>
+        'Univers Diaspora n’est ni établissement bancaire, ni intermédiaire en opérations bancaires et services de paiement (IOBSP), ni intermédiaire en assurance. '
+        . 'Notre rôle est l’information, l’organisation des dossiers et la mise en relation. '
+        . 'Tout conseil, souscription, négociation ou distribution de produits bancaires, de crédit ou d’assurance relève d’établissements habilités, immatriculés à l’ORIAS le cas échéant.',
+    'creation-gestion-d-entreprises' =>
+        'Univers Diaspora n’est ni avocat, ni expert‑comptable, ni commissaire aux comptes. '
+        . 'Nous accompagnons le cadrage administratif et organisationnel de votre projet. '
+        . 'Les actes juridiques, comptables et fiscaux engageants restent du ressort des professionnels habilités.',
+    'immobilier-btp' =>
+        'Univers Diaspora n’est ni notaire, ni agence immobilière au sens de la loi Hoguet, ni maître d’œuvre, ni entreprise de BTP. '
+        . 'Nous facilitons le cadrage du projet et la coordination avec les professionnels du secteur. '
+        . 'La signature des actes, la maîtrise d’œuvre et l’exécution des travaux relèvent de prestataires habilités.',
+    'assistances-administratives' =>
+        'Univers Diaspora intervient en assistance administrative et n’est pas mandataire d’une administration. '
+        . 'Les décisions finales, les actes officiels et les recours formalisés relèvent des autorités compétentes ou de professionnels du droit.',
+    'formations-emplois' =>
+        'Univers Diaspora propose un accompagnement à l’orientation et à la recherche d’emploi. '
+        . 'Le recours à un organisme de formation enregistré (Qualiopi le cas échéant) ou à un opérateur public de l’emploi reste à votre initiative.',
+];
+$customDisclaimer = $serviceDisclaimers[$currentSlug] ?? '';
+
+$serviceBgImages = [
+    'conseils-accompagnements' => 'conseils-accompagnements.jpg',
+    'immobilier-btp' => 'immobilier-btp.jpg',
+    'creation-gestion-d-entreprises' => 'creation-gestion-d-entreprises.jpg',
+    'transports' => 'transports.jpg',
+    'assistances-administratives' => 'assistances-administratives.jpg',
+];
+$serviceBgFile = $serviceBgImages[$currentSlug] ?? '';
+$serviceBgUrl = '';
+if ($serviceBgFile !== '') {
+    $bgPath = __DIR__ . '/../public/img/services/' . $serviceBgFile;
+    if (is_file($bgPath)) {
+        $serviceBgUrl = rtrim($baseUrl, '/') . '/public/img/services/' . rawurlencode($serviceBgFile);
+    }
+}
+$hasServiceBg = $serviceBgUrl !== '';
+
+$titleWords = preg_split('/\s+/u', trim((string)$title)) ?: [(string)$title];
+$titleLead = count($titleWords) > 1 ? implode(' ', array_slice($titleWords, 0, -1)) : '';
+$titleAccent = count($titleWords) > 1 ? (string)end($titleWords) : (string)$titleWords[0];
+$voletCount = count($serviceVolets);
+
 ob_start();
 ?>
-<style>
-  .ud-service-premium {
-    color: #fff;
-    background:
-      radial-gradient(1200px 520px at 88% 0%, rgba(217,160,74,.12), transparent 58%),
-      radial-gradient(900px 420px at 5% 30%, rgba(30,58,110,.24), transparent 62%),
-      linear-gradient(160deg, rgba(10,18,40,.92), rgba(7,12,30,.95));
-    padding-bottom: 0;
-  }
-  .sp-container { max-width: 1240px; margin: 0 auto; padding: 0 1rem; }
-  .sp-back {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    text-decoration: none;
-    color: rgba(255,255,255,.72);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    font-size: .66rem;
-    margin-bottom: 1.2rem;
-  }
-  .sp-back:hover { color: var(--ud-gold); }
-  .sp-hero {
-    padding: 3.25rem 0 3rem;
-  }
-  .sp-kicker {
-    font-size: .64rem;
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.54);
-    margin-bottom: 1.15rem;
-  }
-  .sp-title {
-    margin: 0 0 1rem;
-    font-family: var(--ud-font-display, serif);
-    font-size: clamp(2.3rem, 7vw, 4.6rem);
-    line-height: .97;
-    letter-spacing: -.02em;
-    color: #fff;
-  }
-  .sp-title em { color: var(--ud-gold); font-style: italic; }
-  .sp-sub {
-    color: rgba(255,255,255,.74);
-    max-width: 650px;
-    font-size: .95rem;
-    line-height: 1.8;
-    margin-bottom: 1.6rem;
-  }
-  .sp-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.4rem; }
-  .sp-chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .sp-chip {
-    border: 1px solid rgba(217,160,74,.42);
-    color: rgba(255,255,255,.82);
-    background: rgba(217,160,74,.1);
-    border-radius: 999px;
-    padding: .38rem .7rem;
-    font-size: .66rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-  .sp-main-section { padding: 2.75rem 0; }
-  .sp-value-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: .8rem;
-    margin-bottom: 1.5rem;
-  }
-  .sp-value {
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 10px;
-    background: rgba(255,255,255,.04);
-    padding: .9rem;
-  }
-  .sp-value__title {
-    font-size: .72rem;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--ud-gold-soft);
-    margin: 0 0 .5rem;
-  }
-  .sp-value__text {
-    margin: 0;
-    color: rgba(255,255,255,.78);
-    font-size: .86rem;
-    line-height: 1.6;
-  }
-  .sp-label {
-    color: rgba(255,255,255,.5);
-    letter-spacing: .24em;
-    text-transform: uppercase;
-    font-size: .64rem;
-    margin-bottom: 1.2rem;
-  }
-  .sp-steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: .95rem;
-  }
-  .sp-step {
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 12px;
-    background: rgba(255,255,255,.04);
-    padding: 1rem;
-  }
-  .sp-step__num {
-    width: 2.4rem;
-    height: 2.4rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: .9rem;
-    font-weight: 700;
-    margin-bottom: .7rem;
-    color: var(--ud-gold);
-    border: 1px solid rgba(217,160,74,.55);
-    background: rgba(217,160,74,.12);
-  }
-  .sp-step__title { font-weight: 700; margin-bottom: .3rem; font-size: 1rem; }
-  .sp-step__desc { color: rgba(255,255,255,.68); font-size: .86rem; line-height: 1.7; }
-  .sp-details {
-    margin-top: 2rem;
-    border-top: 1px solid rgba(255,255,255,.1);
-    padding-top: 1.6rem;
-  }
-  .sp-details .ud-about-p,
-  .sp-details .ud-about-p * { color: rgba(255,255,255,.78) !important; }
-  .sp-related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: .75rem;
-  }
-  .sp-related {
-    text-decoration: none;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,.11);
-    border-radius: 10px;
-    background: rgba(255,255,255,.04);
-    padding: .7rem .8rem;
-    display: flex;
-    align-items: center;
-    gap: .55rem;
-    transition: transform .24s ease, border-color .24s ease, background .24s ease;
-  }
-  .sp-related:hover {
-    transform: translateY(-3px);
-    border-color: rgba(217,160,74,.55);
-    background: rgba(217,160,74,.1);
-  }
-  .sp-faq {
-    display: grid;
-    gap: .55rem;
-  }
-  .sp-faq__item {
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 10px;
-    background: rgba(255,255,255,.03);
-    padding: .7rem .85rem;
-  }
-  .sp-faq__item summary {
-    cursor: pointer;
-    font-weight: 700;
-    color: #fff;
-  }
-  .sp-faq__item p {
-    margin: .6rem 0 0;
-    color: rgba(255,255,255,.74);
-    line-height: 1.6;
-    font-size: .9rem;
-  }
-  .sp-reveal {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity .62s cubic-bezier(.4,0,.2,1), transform .62s cubic-bezier(.4,0,.2,1);
-  }
-  .sp-reveal.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .sp-r1 { transition-delay: .08s; }
-  .sp-r2 { transition-delay: .16s; }
-  .sp-r3 { transition-delay: .24s; }
-  @media (prefers-reduced-motion: reduce) {
-    .sp-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-  }
-  /* Colle le fond bleu à la section finale / footer */
-  .ud-service-premium + .ud-footer {
-    margin-top: 0 !important;
-  }
-</style>
-
-<section class="ud-service-premium">
-  <div class="sp-container">
-    <section class="sp-hero">
-      <a class="sp-back sp-reveal" href="<?= h($baseUrl) ?>/#services">← Tous les services</a>
-      <div class="sp-kicker sp-reveal sp-r1">Univers Diaspora · Service</div>
-      <h1 class="sp-title sp-reveal sp-r1"><?= h($title) ?></h1>
-      <p class="sp-sub sp-reveal sp-r2"><?= h($description) ?></p>
-      <div class="sp-actions sp-reveal sp-r2">
-        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Contact</a>
-        <a class="btn btn-outline-light ud-btn ud-btn--ghost" href="<?= h($baseUrl . '/?page=demarrer-maintenant&service=' . rawurlencode($currentSlug)) ?>">Démarrer</a>
+<section class="ud-atelier ud-pole<?= $hasServiceBg ? ' ud-atelier--visual' : '' ?>">
+  <header class="ud-pole__hero at-reveal">
+    <div class="container px-3 px-sm-4">
+      <a class="ud-pole__back" href="<?= h($baseUrl) ?>/#services">
+        <span aria-hidden="true">&larr;</span> Tous les pôles
+      </a>
+      <p class="ud-pole__mark">Univers Diaspora</p>
+      <p class="ud-pole__promise">Faire de vos rêves une réalité</p>
+      <h1 class="ud-pole__title">
+        <?php if ($iconSrc !== ''): ?>
+          <img class="ud-pole__icon" src="<?= h($iconSrc) ?>" alt="" width="48" height="48" loading="eager">
+        <?php endif; ?>
+        <?php if ($titleLead !== ''): ?>
+          <?= h($titleLead) ?><br><span><?= h($titleAccent) ?></span>
+        <?php else: ?>
+          <span><?= h($titleAccent) ?></span>
+        <?php endif; ?>
+      </h1>
+      <p class="ud-pole__lead"><?= h($description) ?></p>
+      <div class="ud-pole__actions">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl, $currentSlug)) ?>">Prendre rendez-vous</a>
+        <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl . '/?page=demarrer-maintenant&service=' . rawurlencode($currentSlug)) ?>">Démarrer le parcours</a>
       </div>
-      <?php $bullets = $service['bullets'] ?? []; ?>
-      <?php if (!empty($bullets)): ?>
-        <div class="sp-chip-row sp-reveal sp-r3">
-          <?php foreach ($bullets as $b): ?>
-            <span class="sp-chip"><?= h((string)$b) ?></span>
-          <?php endforeach; ?>
-        </div>
+      <?php if ($hasVolets): ?>
+        <p class="ud-pole__meta"><?= (int)$voletCount ?> volet<?= $voletCount > 1 ? 's' : '' ?> · Paris &amp; Colombes</p>
       <?php endif; ?>
-    </section>
+    </div>
+    <?php if ($hasServiceBg): ?>
+      <div class="ud-pole__bg" style="background-image:url('<?= h($serviceBgUrl) ?>')" aria-hidden="true"></div>
+      <div class="ud-pole__veil" aria-hidden="true"></div>
+    <?php endif; ?>
+  </header>
 
-    <section class="sp-main-section">
-      <div class="sp-value-grid sp-reveal sp-r1">
-        <article class="sp-value">
-          <h2 class="sp-value__title">Problème</h2>
-          <p class="sp-value__text"><?= h($problemText) ?></p>
-        </article>
-        <article class="sp-value">
-          <h2 class="sp-value__title">Solution</h2>
-          <p class="sp-value__text"><?= h($solutionText) ?></p>
-        </article>
-        <article class="sp-value">
-          <h2 class="sp-value__title">Résultat attendu</h2>
-          <p class="sp-value__text"><?= h($resultText) ?></p>
-        </article>
-      </div>
-      <div class="sp-label sp-reveal">— Déroulement</div>
-      <div class="sp-steps">
-        <?php foreach ($serviceSteps as $idx => $st): ?>
-          <article class="sp-step sp-reveal sp-r<?= (($idx % 3) + 1) ?>">
-            <div class="sp-step__num"><?= (int)($idx + 1) ?></div>
-            <div class="sp-step__title"><?= h((string)($st['title'] ?? '')) ?></div>
-            <div class="sp-step__desc"><?= h((string)($st['text'] ?? '')) ?></div>
-          </article>
+  <?php if ($hasVolets): ?>
+    <nav id="volets-top" class="at-rail at-reveal" aria-label="Volets <?= h((string)$title) ?>">
+      <div class="at-wrap at-rail__inner">
+        <?php foreach ($serviceVolets as $idx => $volet): ?>
+          <a class="at-rail__link" href="#<?= h((string)$volet['id']) ?>">
+            <span class="at-rail__n"><?= str_pad((string)((int)$idx + 1), 2, '0', STR_PAD_LEFT) ?></span>
+            <span class="at-rail__t"><?= h((string)$volet['label']) ?></span>
+          </a>
         <?php endforeach; ?>
       </div>
+    </nav>
+  <?php elseif (!empty($service['bullets'])): ?>
+    <div class="at-rail at-reveal">
+      <div class="at-wrap at-rail__inner at-rail__inner--tags">
+        <?php foreach ($service['bullets'] as $b): ?>
+          <span class="at-rail__tag"><?= h((string)$b) ?></span>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  <?php endif; ?>
 
-      <?php
-      $detailsRaw = trim((string)($service['details'] ?? ''));
-      if ($detailsRaw !== ''):
-          $detailsHtml = !empty($service['details_is_html']);
-          ?>
-        <div class="sp-details sp-reveal sp-r2">
-          <div class="sp-label">— Détails</div>
-          <?php if ($detailsHtml): ?>
-            <div class="ud-about-p ud-about-p--html"><?= services_sanitize_details_html($detailsRaw) ?></div>
-          <?php else: ?>
-            <div class="ud-about-p"><?= nl2br(h($detailsRaw)) ?></div>
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-
-      <div class="sp-actions sp-reveal sp-r3 mt-4">
-        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h($baseUrl) ?>/#contact">Écrire — formulaire</a>
-        <a class="btn btn-outline-light ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=rendez-vous">Prendre rendez-vous</a>
+  <div class="at-wrap at-main">
+    <section class="at-manifesto at-reveal" aria-label="Cadre de l’accompagnement">
+      <div class="at-manifesto__head">
+        <p class="at-kicker">Le cadre</p>
+        <h2 class="at-heading">Comprendre · Agir · Avancer</h2>
+      </div>
+      <div class="at-triad">
+        <article class="at-triad__item">
+          <span class="at-triad__n" aria-hidden="true">01</span>
+          <h3 class="at-triad__label">Problème</h3>
+          <p class="at-triad__text"><?= h($problemText) ?></p>
+        </article>
+        <article class="at-triad__item at-triad__item--focus">
+          <span class="at-triad__n" aria-hidden="true">02</span>
+          <h3 class="at-triad__label">Solution</h3>
+          <p class="at-triad__text"><?= h($solutionText) ?></p>
+        </article>
+        <article class="at-triad__item">
+          <span class="at-triad__n" aria-hidden="true">03</span>
+          <h3 class="at-triad__label">Résultat</h3>
+          <p class="at-triad__text"><?= h($resultText) ?></p>
+        </article>
       </div>
     </section>
 
-    <section class="sp-main-section">
-      <div class="sp-label sp-reveal">— FAQ</div>
-      <div class="sp-faq">
+    <?php if ($hasVolets): ?>
+      <section class="at-section" aria-labelledby="at-volets-heading">
+        <div class="at-section__head at-reveal">
+          <p class="at-kicker">Offre</p>
+          <h2 id="at-volets-heading" class="at-heading">Volets d’accompagnement</h2>
+          <p class="at-section__sub">Chaque volet est un parcours autonome — choisissez celui qui correspond à votre situation.</p>
+        </div>
+
+        <div class="at-volets">
+          <?php foreach ($serviceVolets as $idx => $volet): ?>
+            <?php
+            $rdvHref = ud_appointment_url($baseUrl, $currentSlug, (string)$volet['id']);
+            $startHref = $baseUrl . '/?page=demarrer-maintenant'
+                . '&service=' . rawurlencode($currentSlug)
+                . '&volet=' . rawurlencode((string)$volet['id']);
+            $num = str_pad((string)((int)$idx + 1), 2, '0', STR_PAD_LEFT);
+            $flip = ((int)$idx % 2) === 1;
+            ?>
+            <article
+              id="<?= h((string)$volet['id']) ?>"
+              class="at-volet at-reveal<?= $flip ? ' at-volet--alt' : '' ?>"
+            >
+              <div class="at-volet__index" aria-hidden="true">
+                <span><?= h($num) ?></span>
+              </div>
+              <div class="at-volet__content">
+                <h3 class="at-volet__title"><?= h((string)$volet['label']) ?></h3>
+                <p class="at-volet__lead"><?= h((string)$volet['lead']) ?></p>
+                <p class="at-volet__text"><?= h((string)$volet['text']) ?></p>
+                <div class="at-volet__actions">
+                  <a class="at-btn at-btn--navy at-btn--sm" href="<?= h($rdvHref) ?>">Prendre rendez-vous</a>
+                  <a class="at-btn at-btn--line at-btn--sm" href="<?= h($startHref) ?>">Démarrer</a>
+                </div>
+              </div>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      </section>
+    <?php endif; ?>
+
+    <section class="at-section at-reveal" aria-labelledby="at-steps-heading">
+      <div class="at-section__head">
+        <p class="at-kicker">Méthode</p>
+        <h2 id="at-steps-heading" class="at-heading">Déroulement</h2>
+      </div>
+      <ol class="at-timeline">
+        <?php foreach ($serviceSteps as $idx => $st): ?>
+          <li class="at-timeline__item at-reveal at-r<?= (($idx % 3) + 1) ?>">
+            <span class="at-timeline__dot" aria-hidden="true"><?= (int)($idx + 1) ?></span>
+            <div class="at-timeline__body">
+              <h3 class="at-timeline__title"><?= h((string)($st['title'] ?? '')) ?></h3>
+              <p class="at-timeline__text"><?= h((string)($st['text'] ?? '')) ?></p>
+            </div>
+          </li>
+        <?php endforeach; ?>
+      </ol>
+    </section>
+
+    <?php
+    $detailsRaw = trim((string)($service['details'] ?? ''));
+    if ($detailsRaw !== ''):
+        $detailsHtml = !empty($service['details_is_html']);
+        ?>
+      <section class="at-section at-details at-reveal" aria-labelledby="at-details-heading">
+        <div class="at-section__head">
+          <p class="at-kicker">Précisions</p>
+          <h2 id="at-details-heading" class="at-heading">Détails</h2>
+        </div>
+        <?php if ($detailsHtml): ?>
+          <div class="ud-about-p ud-about-p--html"><?= services_sanitize_details_html($detailsRaw) ?></div>
+        <?php else: ?>
+          <div class="ud-about-p"><?= nl2br(h($detailsRaw)) ?></div>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+  </div>
+
+  <aside class="at-cta-band at-reveal">
+    <div class="at-wrap at-cta-band__inner">
+      <div>
+        <p class="at-kicker at-kicker--light">Prochaine étape</p>
+        <h2 class="at-cta-band__title">Prêt à structurer votre projet&nbsp;?</h2>
+        <p class="at-cta-band__text">Un échange court pour clarifier votre besoin et vous orienter vers le bon volet.</p>
+      </div>
+      <div class="ud-pole__actions">
+        <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl, $currentSlug)) ?>">Prendre rendez-vous</a>
+        <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#contact">Nous écrire</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="at-wrap">
+    <section class="at-section at-reveal" aria-labelledby="at-faq-heading">
+      <div class="at-section__head">
+        <p class="at-kicker">Questions</p>
+        <h2 id="at-faq-heading" class="at-heading">FAQ</h2>
+      </div>
+      <div class="at-faq">
         <?php foreach ($serviceFaq as $faq): ?>
-          <details class="sp-faq__item sp-reveal sp-r2">
+          <details class="at-faq__item">
             <summary><?= h((string)$faq['q']) ?></summary>
             <p><?= h((string)$faq['a']) ?></p>
           </details>
@@ -355,15 +327,35 @@ ob_start();
       </div>
     </section>
 
+    <aside class="at-disclaimer at-reveal" role="note" aria-label="Mention d’information">
+      <div class="at-disclaimer__title">Bon à savoir</div>
+      <?php if ($customDisclaimer !== ''): ?>
+        <p><?= h($customDisclaimer) ?></p>
+      <?php endif; ?>
+      <p>
+        Cet accompagnement vise l’information, l’orientation et la coordination administrative.
+        Il ne constitue ni un conseil juridique, ni un conseil fiscal, ni un conseil financier ou patrimonial réglementé.
+        Pour toute décision engageante, l’intervention d’un professionnel habilité est recommandée.
+        Voir nos <a href="<?= h($baseUrl) ?>/?page=mentions-legales">mentions légales</a>
+        et notre <a href="<?= h($baseUrl) ?>/?page=politique-confidentialite">politique de confidentialité</a>.
+      </p>
+    </aside>
+
     <?php if (!empty($otherServices)): ?>
-      <section class="sp-main-section border-bottom-0">
-        <div class="sp-label sp-reveal">— Autres services</div>
-        <div class="sp-related-grid">
+      <section class="at-section at-more at-reveal" aria-labelledby="at-more-heading">
+        <div class="at-section__head">
+          <p class="at-kicker">Continuer</p>
+          <h2 id="at-more-heading" class="at-heading">Autres pôles</h2>
+        </div>
+        <div class="at-more__grid">
           <?php foreach (array_slice($otherServices, 0, 8) as $s): ?>
             <?php $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode((string)$s['slug'])); ?>
-            <a class="sp-related sp-reveal sp-r2" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
-              <img src="<?= h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) ?>" alt="" width="24" height="24" loading="lazy">
+            <a class="at-more__card" href="<?= h($href) ?>" <?= isset($s['external_url']) ? 'target="_blank" rel="noopener noreferrer"' : '' ?>>
+              <img <?= function_exists('service_icon_img_attrs')
+                ? service_icon_img_attrs((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''), 56, 56)
+                : 'src="' . h(service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))) . '" alt="" width="56" height="56" loading="lazy"' ?>>
               <span><?= h((string)$s['title']) ?></span>
+              <span class="at-more__arrow" aria-hidden="true">→</span>
             </a>
           <?php endforeach; ?>
         </div>
@@ -374,12 +366,16 @@ ob_start();
 
 <script>
 (() => {
-  const nodes = document.querySelectorAll('.sp-reveal');
+  const nodes = document.querySelectorAll('.at-reveal');
   if (!nodes.length) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) {
     nodes.forEach((n) => n.classList.add('is-visible'));
     return;
   }
+
+  document.documentElement.classList.add('at-motion');
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -387,7 +383,7 @@ ob_start();
         io.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.12 });
+  }, { threshold: 0.08, rootMargin: '40px 0px' });
   nodes.forEach((n) => io.observe(n));
 })();
 </script>
@@ -419,6 +415,8 @@ $view = [
     })(),
     'active' => $service['slug'] ?? '',
     'content' => $content,
+    'ai_context_slug' => (string)($service['slug'] ?? ''),
+    'ai_context_title' => (string)($service['title'] ?? ''),
 ];
 
 require __DIR__ . '/_layout.php';

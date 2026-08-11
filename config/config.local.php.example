@@ -49,6 +49,10 @@ return [
     //         'uses_audience_measurement' => false,
     //     ],
     // ],
+    // 'offres_recrutement' => [
+    //     'email' => 'rh@universdiasporas.com',
+    //     'phones' => ['0970707059', '0660288341'],
+    // ],
     'mail' => [
         'enable' => false,
         'to' => 'votre-email@domaine.com',

@@ -1,0 +1,170 @@
+# =============================================================================
+# Univers Diaspora — .htaccess racine (Apache 2.4 / Hostinger)
+# Conçu et maintenu par : Studio Univers Diaspora
+# =============================================================================
+
+Options -Indexes -MultiViews
+ServerSignature Off
+DirectoryIndex index.php index.html
+
+# -----------------------------------------------------------------------------
+# 1. HTTPS forcé + canonicalisation www / non-www
+# -----------------------------------------------------------------------------
+# Hostinger : SSL Let's Encrypt activé via hPanel > Sécurité > SSL
+# `localhost` et `127.0.0.1` (WAMP / dev local) sont exemptés de la redirection.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS — exemption pour le développement local (WAMP)
+    RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} !^192\.168\. [NC]
+    RewriteCond %{HTTP_HOST} !\.local$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # ---- Choix 1 : forcer SANS www (recommandé) — uniquement en production ----
+    RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:\d+)?$ [NC]
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+    # ---- Choix 2 (alternatif) : forcer AVEC www ----
+    # RewriteCond %{HTTP_HOST} !^www\. [NC]
+    # RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
+    # RewriteCond %{HTTP_HOST} !^127\.0\.0\.1(:\d+)?$ [NC]
+    # RewriteRule ^ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 2. Routing — toutes les requêtes non-fichier passent par index.php
+# -----------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Pas de RewriteBase fixe : fonctionne à la racine (Hostinger) et en sous-dossier (WAMP /universDiaspora).
+
+    # Rendez-vous : URLs lisibles (/rendez-vous/slug/volet) — priorité avant test -f/-d
+    RewriteRule ^rendez-vous/?$ index.php?page=rendez-vous [L,QSA,NC]
+    RewriteRule ^rendez-vous/([a-z0-9-]{1,120})/?$ index.php?page=rendez-vous&service=$1 [L,QSA,NC]
+    RewriteRule ^rendez-vous/([a-z0-9-]{1,120})/([a-z0-9-]{1,120})/?$ index.php?page=rendez-vous&service=$1&volet=$2 [L,QSA,NC]
+
+    # Laisser passer les fichiers et dossiers existants
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Bloquer certains chemins sensibles (réponse 404 transparente)
+    RewriteRule ^(\.git|\.env|terminals|node_modules|vendor)(/|$) - [F,L]
+
+    # /sitemap.xml -> sitemap.php
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+    # PWA : alias manifeste
+    RewriteRule ^manifest\.webmanifest$ manifest.php [L]
+
+    # Réécrire le reste vers index.php (la query string est conservée)
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 2b. En-têtes PWA (service worker)
+# -----------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    <FilesMatch "^(sw\.js)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 3. En-têtes de sécurité
+# -----------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+
+    # HSTS — n'activez qu'après validation HTTPS sur l'ensemble du site
+    Header always set Strict-Transport-Security "max-age=15552000; includeSubDomains" env=HTTPS
+
+    # Retire l'en-tête X-Powered-By PHP par défaut
+    Header always unset X-Powered-By
+    # Ne pas unset Server sur Hostinger/LiteSpeed (peut provoquer un 403 global).
+
+    # Autorise le préchargement des fonts cross-origin (si CDN externe)
+    <FilesMatch "\.(woff2?|ttf|otf|eot|svg)$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 4. Compression Gzip / Brotli
+# -----------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/xml application/json application/javascript application/x-javascript image/svg+xml application/rss+xml application/atom+xml font/ttf font/otf application/font-woff application/font-woff2
+</IfModule>
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css application/json application/javascript image/svg+xml
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 5. Cache navigateur (assets statiques)
+# -----------------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault                              "access plus 1 month"
+
+    ExpiresByType text/html                     "access plus 0 seconds"
+    ExpiresByType application/json              "access plus 0 seconds"
+    ExpiresByType application/xml               "access plus 0 seconds"
+    ExpiresByType text/xml                      "access plus 0 seconds"
+
+    ExpiresByType text/css                      "access plus 30 days"
+    ExpiresByType application/javascript        "access plus 30 days"
+    ExpiresByType application/x-javascript      "access plus 30 days"
+    ExpiresByType text/javascript               "access plus 30 days"
+
+    ExpiresByType image/jpeg                    "access plus 6 months"
+    ExpiresByType image/png                     "access plus 6 months"
+    ExpiresByType image/gif                     "access plus 6 months"
+    ExpiresByType image/webp                    "access plus 6 months"
+    ExpiresByType image/svg+xml                 "access plus 6 months"
+    ExpiresByType image/x-icon                  "access plus 1 year"
+
+    ExpiresByType video/mp4                     "access plus 6 months"
+    ExpiresByType video/webm                    "access plus 6 months"
+
+    ExpiresByType font/woff                     "access plus 1 year"
+    ExpiresByType font/woff2                    "access plus 1 year"
+    ExpiresByType application/font-woff         "access plus 1 year"
+    ExpiresByType application/font-woff2        "access plus 1 year"
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# 6. Protection des fichiers sensibles
+# -----------------------------------------------------------------------------
+<FilesMatch "(?i)^(composer\.(json|lock)|package(-lock)?\.json|README\.md|DEPLOY.*\.md|\.env.*|\.gitignore|\.gitattributes|.*\.sql|.*\.log)$">
+    Require all denied
+</FilesMatch>
+
+<Files ".htaccess">
+    Require all denied
+</Files>
+<Files ".htpasswd">
+    Require all denied
+</Files>
+
+# -----------------------------------------------------------------------------
+# 7. Pages d'erreur personnalisées
+# -----------------------------------------------------------------------------
+ErrorDocument 404 /error.php?code=404
+ErrorDocument 403 /error.php?code=403
+ErrorDocument 500 /error.php?code=500
+
+# -----------------------------------------------------------------------------
+# 8. Limites PHP — via .user.ini sur Hostinger (PHP-FPM). Ne pas utiliser php_value
+#    ici : sur l'hébergement mutualisé cela provoque souvent une erreur 403.
+# -----------------------------------------------------------------------------

@@ -3,9 +3,12 @@ declare(strict_types=1);
 
 $services = function_exists('services_all') ? services_all() : (require __DIR__ . '/../data/services.php');
 $config = require __DIR__ . '/../config/config.php';
-$baseUrl = rtrim($config['app']['base_url'], '/');
+$baseUrl = ud_site_base_url();
 
 $selected = (string)($_GET['service'] ?? '');
+if ($selected !== '' && preg_match('/^[a-z0-9-]+$/', $selected) !== 1) {
+    $selected = '';
+}
 $service = null;
 foreach ($services as $s) {
     if (($s['slug'] ?? '') === $selected) {
@@ -13,6 +16,27 @@ foreach ($services as $s) {
         break;
     }
 }
+
+$voletParam = (string)($_GET['volet'] ?? '');
+if ($voletParam !== '' && preg_match('/^[a-z0-9-]+$/', $voletParam) !== 1) {
+    $voletParam = '';
+}
+$voletLabel = '';
+if ($service !== null && $voletParam !== '') {
+    $voletsAll = require __DIR__ . '/../data/service_volets.php';
+    if (!empty($voletsAll[$selected])) {
+        foreach ($voletsAll[$selected] as $v) {
+            if (($v['id'] ?? '') === $voletParam) {
+                $voletLabel = (string)($v['label'] ?? '');
+                break;
+            }
+        }
+    }
+    if ($voletLabel === '') {
+        $voletParam = '';
+    }
+}
+
 $hasPicked = ($service !== null && empty($service['coming_soon']));
 $progress = $hasPicked ? 66 : 33;
 
@@ -30,6 +54,14 @@ ob_start();
       <div class="ud-start-hero__kicker">Démarrer maintenant</div>
       <h1 class="ud-start-hero__title mb-2">Lancez votre projet en quelques minutes</h1>
       <div class="ud-start-hero__subtitle">Choisissez un service, décrivez votre besoin : nous vous recontactons rapidement.</div>
+      <?php if ($service !== null): ?>
+        <div class="d-inline-flex flex-wrap align-items-center gap-2 mt-2">
+          <span class="badge text-bg-light border">Service : <strong><?= h((string)($service['title'] ?? '')) ?></strong></span>
+          <?php if ($voletLabel !== ''): ?>
+            <span class="badge text-bg-light border">Volet : <strong><?= h($voletLabel) ?></strong></span>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
 
       <div class="ud-stepper mt-4" aria-label="Progression">
         <div class="ud-stepper__bar" role="progressbar" aria-valuemin="0" aria-valuenow="<?= (int) $progress ?>" aria-valuemax="100">
@@ -120,6 +152,9 @@ ob_start();
           <?php
             $template = "Bonjour Univers Diaspora,\n\n";
             $template .= "Je souhaite un accompagnement pour : " . ($service['title'] ?? '[Service]') . "\n";
+            if ($voletLabel !== '') {
+                $template .= "Volet : " . $voletLabel . "\n";
+            }
             $template .= "Pays / Ville : \n";
             $template .= "Objectif : \n";
             $template .= "Budget (optionnel) : \n";

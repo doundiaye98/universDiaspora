@@ -6,36 +6,41 @@ declare(strict_types=1);
  */
 function announcements_all(PDO $pdo = null, bool $onlyPublished = false, ?string $category = null): array
 {
-    $pdo = $pdo ?? db();
-    $sql = 'SELECT * FROM announcements WHERE 1=1';
-    $params = [];
-    if ($onlyPublished) {
-        $sql .= ' AND is_published = 1';
-    }
-    if ($category !== null && in_array($category, ['offre', 'recrutement'], true)) {
-        $sql .= ' AND category = :c';
-        $params[':c'] = $category;
-    }
-    $sql .= ' ORDER BY sort_order ASC, id DESC';
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll();
-    if (!is_array($rows)) {
+    try {
+        $pdo = $pdo ?? db();
+        $sql = 'SELECT * FROM announcements WHERE 1=1';
+        $params = [];
+        if ($onlyPublished) {
+            $sql .= ' AND is_published = 1';
+        }
+        if ($category !== null && in_array($category, ['offre', 'recrutement'], true)) {
+            $sql .= ' AND category = :c';
+            $params[':c'] = $category;
+        }
+        $sql .= ' ORDER BY sort_order ASC, id DESC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        if (!is_array($rows)) {
+            return [];
+        }
+        return array_map(static function (array $r): array {
+            return [
+                'id' => (int)$r['id'],
+                'category' => (string)$r['category'],
+                'title' => (string)$r['title'],
+                'summary' => (string)($r['summary'] ?? ''),
+                'content' => (string)($r['content'] ?? ''),
+                'sort_order' => (int)($r['sort_order'] ?? 0),
+                'is_published' => !empty($r['is_published']),
+                'created_at' => (string)($r['created_at'] ?? ''),
+                'updated_at' => (string)($r['updated_at'] ?? ''),
+            ];
+        }, $rows);
+    } catch (Throwable $e) {
+        error_log('[announcements_all] ' . $e->getMessage());
         return [];
     }
-    return array_map(static function (array $r): array {
-        return [
-            'id' => (int)$r['id'],
-            'category' => (string)$r['category'],
-            'title' => (string)$r['title'],
-            'summary' => (string)($r['summary'] ?? ''),
-            'content' => (string)($r['content'] ?? ''),
-            'sort_order' => (int)($r['sort_order'] ?? 0),
-            'is_published' => !empty($r['is_published']),
-            'created_at' => (string)($r['created_at'] ?? ''),
-            'updated_at' => (string)($r['updated_at'] ?? ''),
-        ];
-    }, $rows);
 }
 
 /**
@@ -46,24 +51,29 @@ function announcements_find_public_recruitment(int $id, PDO $pdo = null): ?array
     if ($id <= 0) {
         return null;
     }
-    $pdo = $pdo ?? db();
-    $stmt = $pdo->prepare(
-        'SELECT * FROM announcements WHERE id = :id AND category = \'recrutement\' AND is_published = 1 LIMIT 1'
-    );
-    $stmt->execute([':id' => $id]);
-    $r = $stmt->fetch();
-    if (!is_array($r)) {
+    try {
+        $pdo = $pdo ?? db();
+        $stmt = $pdo->prepare(
+            'SELECT * FROM announcements WHERE id = :id AND category = \'recrutement\' AND is_published = 1 LIMIT 1'
+        );
+        $stmt->execute([':id' => $id]);
+        $r = $stmt->fetch();
+        if (!is_array($r)) {
+            return null;
+        }
+        return [
+            'id' => (int)$r['id'],
+            'category' => (string)$r['category'],
+            'title' => (string)$r['title'],
+            'summary' => (string)($r['summary'] ?? ''),
+            'content' => (string)($r['content'] ?? ''),
+            'sort_order' => (int)($r['sort_order'] ?? 0),
+            'is_published' => !empty($r['is_published']),
+        ];
+    } catch (Throwable $e) {
+        error_log('[announcements_find_public_recruitment] ' . $e->getMessage());
         return null;
     }
-    return [
-        'id' => (int)$r['id'],
-        'category' => (string)$r['category'],
-        'title' => (string)$r['title'],
-        'summary' => (string)($r['summary'] ?? ''),
-        'content' => (string)($r['content'] ?? ''),
-        'sort_order' => (int)($r['sort_order'] ?? 0),
-        'is_published' => !empty($r['is_published']),
-    ];
 }
 
 function announcements_find(int $id, PDO $pdo = null): ?array

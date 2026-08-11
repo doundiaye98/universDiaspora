@@ -1,4 +1,7 @@
--- Univers Diaspora - schema minimal
+-- Univers Diaspora - schema minimal (développement local WAMP uniquement)
+--
+-- Hostinger : n’importez PAS ce fichier tel quel (CREATE DATABASE interdit → #1044).
+-- Utilisez la base créée dans hPanel (ex. u528552725_udiaspora) et chargez le site une fois.
 
 CREATE DATABASE IF NOT EXISTS `univers_diaspora`
   CHARACTER SET utf8mb4

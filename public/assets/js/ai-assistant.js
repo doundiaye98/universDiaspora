@@ -14,13 +14,38 @@
   const setOpen = (open) => {
     root.classList.toggle("is-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute(
+      "aria-label",
+      open ? "Fermer le chatbot IA Univers Diaspora" : "Ouvrir le chatbot IA Univers Diaspora"
+    );
     if (open) input.focus();
+  };
+
+  const escapeHtml = (s) =>
+    String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const linkifyAndBreak = (text) => {
+    const safe = escapeHtml(text);
+    const withLinks = safe.replace(
+      /(https?:\/\/[^\s<>")]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    return withLinks.replace(/\n/g, "<br>");
   };
 
   const appendMessage = (text, from) => {
     const article = document.createElement("article");
     article.className = `ud-ai-msg ${from === "user" ? "ud-ai-msg--user" : "ud-ai-msg--bot"}`;
-    article.textContent = text;
+    if (from === "user") {
+      article.textContent = text;
+    } else {
+      article.innerHTML = linkifyAndBreak(text);
+    }
     messages.appendChild(article);
     messages.scrollTop = messages.scrollHeight;
   };
@@ -30,7 +55,7 @@
     if (pending) return;
     pending = true;
     appendMessage(message, "user");
-    appendMessage("Je vous réponds...", "bot");
+    appendMessage("Analyse de votre demande en cours…", "bot");
     const waitingNode = messages.lastElementChild;
 
     try {
@@ -42,13 +67,19 @@
       const data = await res.json();
       if (waitingNode && waitingNode.parentNode) waitingNode.parentNode.removeChild(waitingNode);
       if (!data || !data.ok || typeof data.answer !== "string") {
-        appendMessage("Je ne peux pas répondre pour le moment. Merci de réessayer dans quelques instants.", "bot");
+        appendMessage(
+          "Je ne suis pas en mesure de répondre pour l’instant. Vous pouvez prendre rendez-vous ou nous écrire via le formulaire de contact.",
+          "bot"
+        );
         return;
       }
       appendMessage(data.answer, "bot");
     } catch (e) {
       if (waitingNode && waitingNode.parentNode) waitingNode.parentNode.removeChild(waitingNode);
-      appendMessage("Service indisponible temporairement. Vous pouvez aussi utiliser le formulaire contact.", "bot");
+      appendMessage(
+        "Service momentanément indisponible. Vous pouvez nous joindre via le formulaire de contact ou la prise de rendez-vous.",
+        "bot"
+      );
     } finally {
       pending = false;
     }
@@ -62,6 +93,22 @@
     if (value === "" || pending) return;
     input.value = "";
     ask(value);
+  });
+
+  /* Boutons de suggestion (visibles surtout sur les pages service) */
+  messages.addEventListener("click", (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    const btn = target.closest(".ud-ai-suggest__btn");
+    if (!btn) return;
+    e.preventDefault();
+    const prefill = btn.getAttribute("data-prefill") || "";
+    if (prefill === "" || pending) return;
+    const suggestGroup = btn.closest(".ud-ai-suggest");
+    if (suggestGroup && suggestGroup.parentNode) {
+      suggestGroup.parentNode.removeChild(suggestGroup);
+    }
+    ask(prefill);
   });
 })();
 

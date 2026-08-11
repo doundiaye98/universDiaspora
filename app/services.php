@@ -52,7 +52,7 @@ function services_sanitize_details_html(string $html): string
  */
 function service_icon_slug_aliases(): array
 {
-    $informatiques = 'univers-diasporas-icone-informatiques.png';
+    $informatiques = 'icon-informatiques.jpg';
     return [
         'developpement-web' => $informatiques,
         'developpement' => $informatiques,
@@ -60,9 +60,47 @@ function service_icon_slug_aliases(): array
         'site-web' => $informatiques,
         'sites-internet' => $informatiques,
         'informatique' => $informatiques,
-        // Slug « immobilier-btp » mais fichier seed : univers-diasporas-icone-immobilier.png (sans « -btp »)
-        'immobilier-btp' => 'univers-diasporas-icone-immobilier.png',
+        'conseils-accompagnements' => 'icon-conseils-accompagnements.jpg',
+        'immobilier-btp' => 'icon-immobilier-btp.jpg',
+        'voyages' => 'icon-voyages.jpg',
+        'creation-gestion-d-entreprises' => 'icon-creation-gestion-d-entreprises.jpg',
+        'transports' => 'icon-transports.jpg',
+        'assistances-administratives' => 'icon-assistances-administratives.jpg',
+        'formations-emplois' => 'icon-formations-emplois.jpg',
+        'services-a-la-personne' => 'icon-services-a-la-personne.jpg',
+        'assurances-credits' => 'icon-assurances-credits.jpg',
+        'informatiques' => 'icon-informatiques.jpg',
+        'supermarket' => 'icon-supermarket.jpg',
+        'bien-d-autres-services' => 'icon-bien-d-autres-services.jpg',
     ];
+}
+
+/** Icône SVG de secours (toujours affichable, même sans fichier PNG sur le serveur). */
+function service_icon_placeholder_url(): string
+{
+    static $url = null;
+    if ($url !== null) {
+        return $url;
+    }
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect fill="#e8ecf4" width="64" height="64" rx="14"/><path fill="rgba(11,42,111,.35)" d="M32 20c-4.5 0-8 3.5-8 8 0 5 3 9 8 14 5-5 8-9 8-14 0-4.5-3.5-8-8-8zm0 24c-8 0-15 4-15 8v4h30v-4c0-4-7-8-15-8z"/></svg>';
+    return $url = 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
+}
+
+/**
+ * Attributs HTML pour une balise img d’icône service (repli automatique si 404).
+ */
+function service_icon_img_attrs(string $iconFilename, string $baseUrl, ?string $serviceSlug = null, int $width = 24, int $height = 24, string $class = ''): string
+{
+    $src = service_icon_url($iconFilename, $baseUrl, $serviceSlug);
+    $fallback = service_icon_placeholder_url();
+    $attrs = 'src="' . h($src) . '" alt="" width="' . $width . '" height="' . $height . '" loading="lazy"';
+    if ($class !== '') {
+        $attrs .= ' class="' . h($class) . '"';
+    }
+    if ($src !== $fallback) {
+        $attrs .= ' onerror="this.onerror=null;this.src=\'' . h($fallback) . '\'"';
+    }
+    return $attrs;
 }
 
 /**
@@ -94,12 +132,31 @@ function service_icon_url(string $iconFilename, string $baseUrl, ?string $servic
             $url = ud_public_asset_url('img/' . $name, $baseUrl);
             $mtime = @filemtime($fs);
             if ($mtime !== false) {
-                $url .= '?v=' . $mtime;
+                $url .= (strpos($url, '?') !== false ? '&' : '?') . 'v=' . $mtime;
             }
             return $url;
         }
         return null;
     };
+
+    // Préférer les nouvelles icônes photo par slug (icon-{slug}.jpg) si présentes
+    $slugKey = strtolower(trim((string)($serviceSlug ?? '')));
+    if ($slugKey !== '') {
+        $safe = preg_replace('~[^a-z0-9-]~', '', $slugKey) ?? '';
+        if ($safe !== '') {
+            $u = $tryFile('icon-' . $safe . '.jpg');
+            if ($u !== null) {
+                return $u;
+            }
+        }
+        $aliases = service_icon_slug_aliases();
+        if (isset($aliases[$slugKey])) {
+            $u = $tryFile($aliases[$slugKey]);
+            if ($u !== null) {
+                return $u;
+            }
+        }
+    }
 
     if ($base !== '') {
         $u = $tryFile($base);
@@ -108,26 +165,24 @@ function service_icon_url(string $iconFilename, string $baseUrl, ?string $servic
         }
     }
 
-    $slugKey = strtolower(trim((string)($serviceSlug ?? '')));
     if ($slugKey !== '') {
-        $aliases = service_icon_slug_aliases();
-        if (isset($aliases[$slugKey])) {
-            $u = $tryFile($aliases[$slugKey]);
-            if ($u !== null) {
-                return $u;
-            }
-        }
-        $safe = preg_replace('~[^a-z0-9-]~', '', $slugKey);
+        $safe = preg_replace('~[^a-z0-9-]~', '', $slugKey) ?? '';
         if ($safe !== '') {
             $u = $tryFile('univers-diasporas-icone-' . $safe . '.png');
             if ($u !== null) {
                 return $u;
             }
+            $svcMatches = glob($dirFs . 'svc-' . $safe . '-*.jpg') ?: [];
+            if ($svcMatches !== []) {
+                $u = $tryFile(basename((string)$svcMatches[0]));
+                if ($u !== null) {
+                    return $u;
+                }
+            }
         }
     }
 
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect fill="#e8ecf4" width="64" height="64" rx="14"/><path fill="rgba(11,42,111,.35)" d="M32 20c-4.5 0-8 3.5-8 8 0 5 3 9 8 14 5-5 8-9 8-14 0-4.5-3.5-8-8-8zm0 24c-8 0-15 4-15 8v4h30v-4c0-4-7-8-15-8z"/></svg>';
-    return 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
+    return service_icon_placeholder_url();
 }
 
 function service_icon_public_img_dir(): string
@@ -490,5 +545,136 @@ function services_replace_bullets(PDO $pdo, int $serviceId, string $bulletsText)
         $pdo->prepare('INSERT INTO service_bullets (service_id, bullet, sort_order) VALUES (:sid, :b, :o)')
             ->execute([':sid' => $serviceId, ':b' => $line, ':o' => $order]);
     }
+}
+
+/**
+ * Libellé d’un volet pour un service (data/service_volets.php).
+ */
+function service_volet_label(string $serviceSlug, string $voletId): string
+{
+    $serviceSlug = trim($serviceSlug);
+    $voletId = trim($voletId);
+    if ($serviceSlug === '' || $voletId === '' || preg_match('/^[a-z0-9-]+$/', $serviceSlug) !== 1 || preg_match('/^[a-z0-9-]+$/', $voletId) !== 1) {
+        return '';
+    }
+    $voletsAll = require __DIR__ . '/../data/service_volets.php';
+    if (empty($voletsAll[$serviceSlug]) || !is_array($voletsAll[$serviceSlug])) {
+        return '';
+    }
+    foreach ($voletsAll[$serviceSlug] as $v) {
+        if (($v['id'] ?? '') === $voletId) {
+            return trim((string)($v['label'] ?? ''));
+        }
+    }
+    return '';
+}
+
+/**
+ * Contexte service / volet pour une demande de rendez-vous.
+ *
+ * @return array{service_slug:string,volet_id:string,service_title:string,volet_label:string}|null
+ */
+function appointment_service_context(string $serviceSlug, string $voletId = ''): ?array
+{
+    $serviceSlug = trim($serviceSlug);
+    $voletId = trim($voletId);
+    if ($serviceSlug === '' || preg_match('/^[a-z0-9-]{1,120}$/', $serviceSlug) !== 1) {
+        return null;
+    }
+    if ($voletId !== '' && preg_match('/^[a-z0-9-]{1,120}$/', $voletId) !== 1) {
+        $voletId = '';
+    }
+
+    $service = services_find_by_slug($serviceSlug);
+    if ($service === null) {
+        foreach (services_all() as $s) {
+            if (($s['slug'] ?? '') === $serviceSlug) {
+                $service = $s;
+                break;
+            }
+        }
+    }
+    if ($service === null) {
+        return null;
+    }
+
+    $voletLabel = $voletId !== '' ? service_volet_label($serviceSlug, $voletId) : '';
+    if ($voletId !== '' && $voletLabel === '') {
+        $voletId = '';
+    }
+
+    return [
+        'service_slug' => $serviceSlug,
+        'volet_id' => $voletId,
+        'service_title' => (string)($service['title'] ?? $serviceSlug),
+        'volet_label' => $voletLabel,
+    ];
+}
+
+function appointment_format_date_fr(string $dateYmd): string
+{
+    $dateYmd = trim($dateYmd);
+    if ($dateYmd === '') {
+        return '';
+    }
+    $dt = DateTime::createFromFormat('Y-m-d', $dateYmd);
+    if (!$dt) {
+        return $dateYmd;
+    }
+    static $months = [
+        1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
+        5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
+        9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
+    ];
+    $m = (int)$dt->format('n');
+    return (int)$dt->format('j') . ' ' . ($months[$m] ?? $dt->format('m')) . ' ' . $dt->format('Y');
+}
+
+/**
+ * Message type pour une demande de rendez-vous liée à un service.
+ */
+function appointment_build_message(
+    string $serviceTitle,
+    string $voletLabel = '',
+    string $office = '',
+    string $dateYmd = '',
+    string $timeHi = ''
+): string {
+    $serviceTitle = trim($serviceTitle);
+    if ($serviceTitle === '') {
+        return '';
+    }
+
+    $lines = ['Bonjour,', '', 'Je souhaite prendre rendez-vous pour être accompagné(e) sur :'];
+    $lines[] = '- Service : ' . $serviceTitle;
+    if (trim($voletLabel) !== '') {
+        $lines[] = '- Volet : ' . trim($voletLabel);
+    }
+
+    $office = trim($office);
+    $dateYmd = trim($dateYmd);
+    $timeHi = trim($timeHi);
+    if ($timeHi !== '' && strlen($timeHi) >= 5) {
+        $timeHi = substr($timeHi, 0, 5);
+    }
+
+    if ($office !== '' || $dateYmd !== '' || $timeHi !== '') {
+        $lines[] = '';
+        $lines[] = 'Créneau souhaité :';
+        if ($office !== '') {
+            $lines[] = '- Bureau : ' . $office;
+        }
+        if ($dateYmd !== '') {
+            $lines[] = '- Date : ' . appointment_format_date_fr($dateYmd);
+        }
+        if ($timeHi !== '') {
+            $lines[] = '- Heure : ' . $timeHi;
+        }
+    }
+
+    $lines[] = '';
+    $lines[] = 'Merci de me recontacter pour confirmer ce créneau et m’indiquer les documents à préparer.';
+
+    return implode("\n", $lines);
 }
 

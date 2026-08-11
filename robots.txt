@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /?page=admin
+Disallow: /?page=admin-
+Disallow: /?action=admin-
+Disallow: /?action=ai-chat
+Disallow: /config/
+Disallow: /app/
+Disallow: /data/
+Disallow: /pages/
+Disallow: /sql/
+Disallow: /storage/
+Disallow: /terminals/
+
+Sitemap: https://universdiaspora.com/sitemap.xml

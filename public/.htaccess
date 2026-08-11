@@ -1,0 +1,4 @@
+# Autoriser l'accès direct aux fichiers statiques (CSS, JS, images).
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
