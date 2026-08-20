@@ -46,7 +46,7 @@ ob_start();
         </p>
         <div class="ud-apropos__actions">
           <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
-          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#services">Voir les 12 pôles</a>
+          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#services">Voir les 12 services</a>
         </div>
       </div>
     </header>
@@ -139,7 +139,6 @@ ob_start();
           </p>
           <div class="ud-apropos__actions ud-apropos__actions--center">
             <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
-            <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/?page=equipe">L’équipe</a>
             <a class="btn btn-outline-primary ud-btn ud-btn--ghost" href="<?= h($baseUrl) ?>/#contact">Contact</a>
           </div>
         </section>

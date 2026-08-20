@@ -203,6 +203,7 @@ if ($isHome) {
         $pageBgUrl = rtrim($baseUrl, '/') . '/public/img/g1.jpg';
     }
 }
+$isApptNav = ($pageParam === 'rendez-vous' || $pageParam === 'appointment' || str_contains((string)($_SERVER['REQUEST_URI'] ?? ''), '/rendez-vous'));
 ?>
 <body class="ud-body ud-cosmos<?= $isHome ? ' ud-home' : '' ?><?= $pageBgUrl !== '' ? ' ud-home--photo' : '' ?>">
 
@@ -243,10 +244,6 @@ if ($isHome) {
             <a class="nav-link ud-navlink<?= $isHome ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/">Accueil</a>
           </li>
 
-          <li class="nav-item">
-            <a class="nav-link ud-navlink<?= $active === 'apropos' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
-          </li>
-
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle ud-navlink<?= $isServicePage ? ' active' : '' ?>" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               Services
@@ -255,7 +252,7 @@ if ($isHome) {
               <?php foreach ($services as $s): ?>
                 <?php
                   $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
-                  $ext = isset($s['external_url']);
+                  $ext = function_exists('ud_service_opens_new_tab') ? ud_service_opens_new_tab($s) : !empty($s['external_url']);
                   $navIconSrc = function_exists('service_icon_url')
                     ? service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))
                     : ud_public_asset_url('img/' . basename((string)($s['icon'] ?? '')), $baseUrl);
@@ -280,19 +277,19 @@ if ($isHome) {
           </li>
 
           <li class="nav-item">
-            <a class="nav-link ud-navlink<?= $active === 'equipe' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=equipe">Équipe</a>
+            <a class="nav-link ud-navlink<?= $isApptNav ? ' active' : '' ?>" href="<?= h(ud_appointment_url($baseUrl)) ?>">Rendez-vous</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link ud-navlink ud-nav-cta" href="<?= h($baseUrl) ?>/#contact">Contact</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link ud-navlink<?= $active === 'apropos' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link ud-navlink<?= $active === 'offres-recrutement' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=offres-recrutement">Offres &amp; recrutement</a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link ud-navlink" href="<?= h(ud_appointment_url($baseUrl)) ?>">Rendez-vous</a>
-          </li>
-
-          <li class="nav-item ms-lg-2">
-            <a class="btn btn-primary ud-nav-cta" href="<?= h($baseUrl) ?>/#contact">Contact</a>
           </li>
         </ul>
       </div>
@@ -300,9 +297,6 @@ if ($isHome) {
   </nav>
 </header>
 
-<?php
-  $isApptNav = ($pageParam === 'rendez-vous' || $pageParam === 'appointment' || str_contains((string)($_SERVER['REQUEST_URI'] ?? ''), '/rendez-vous'));
-?>
 <nav class="ud-tabbar d-lg-none" aria-label="Navigation principale">
   <a class="ud-tabbar__item<?= $isHome ? ' is-active' : '' ?>" href="<?= h($baseUrl) ?>/">
     <span class="ud-tabbar__icon" aria-hidden="true">
@@ -355,16 +349,18 @@ if ($isHome) {
 
     <div class="list-group list-group-flush ud-mobile-list">
       <a class="list-group-item list-group-item-action<?= $isHome ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/">Accueil</a>
+      <a class="list-group-item list-group-item-action" href="<?= h($baseUrl) ?>/#services">Services</a>
+      <a class="list-group-item list-group-item-action" href="<?= h($baseUrl) ?>/#services">Découvrir</a>
+      <a class="list-group-item list-group-item-action" href="<?= h(ud_appointment_url($baseUrl)) ?>">Rendez-vous</a>
+      <a class="list-group-item list-group-item-action" href="<?= h($baseUrl) ?>/#contact">Contact</a>
       <a class="list-group-item list-group-item-action<?= $active === 'apropos' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=apropos">À propos</a>
-      <a class="list-group-item list-group-item-action" href="<?= h($baseUrl) ?>/#services">Découvrir nos services</a>
-      <a class="list-group-item list-group-item-action<?= $active === 'equipe' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=equipe">Équipe</a>
       <a class="list-group-item list-group-item-action<?= $active === 'offres-recrutement' ? ' active' : '' ?>" href="<?= h($baseUrl) ?>/?page=offres-recrutement">Offres &amp; recrutement</a>
       <div class="ud-divider my-2"></div>
       <div class="ud-mobile-list__label px-1 mb-1">Nos services</div>
       <?php foreach ($services as $s): ?>
         <?php
           $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode($s['slug']));
-          $ext = isset($s['external_url']);
+          $ext = function_exists('ud_service_opens_new_tab') ? ud_service_opens_new_tab($s) : !empty($s['external_url']);
           $navIconSrc = function_exists('service_icon_url')
             ? service_icon_url((string)($s['icon'] ?? ''), $baseUrl, (string)($s['slug'] ?? ''))
             : ud_public_asset_url('img/' . basename((string)($s['icon'] ?? '')), $baseUrl);
@@ -419,12 +415,12 @@ if ($isHome) {
         <div class="ud-footer__heading">Navigation</div>
         <ul class="ud-footer__list list-unstyled mb-0">
           <li><a href="<?= h($baseUrl) ?>/">Accueil</a></li>
-          <li><a href="<?= h($baseUrl) ?>/?page=apropos">À propos</a></li>
           <li><a href="<?= h($baseUrl) ?>/#services">Services</a></li>
-          <li><a href="<?= h($baseUrl) ?>/?page=equipe">Équipe</a></li>
-          <li><a href="<?= h($baseUrl) ?>/?page=offres-recrutement">Offres &amp; recrutement</a></li>
+          <li><a href="<?= h($baseUrl) ?>/#services">Découvrir</a></li>
           <li><a href="<?= h(ud_appointment_url($baseUrl)) ?>">Rendez-vous</a></li>
           <li><a href="<?= h($baseUrl) ?>/#contact">Contact</a></li>
+          <li><a href="<?= h($baseUrl) ?>/?page=apropos">À propos</a></li>
+          <li><a href="<?= h($baseUrl) ?>/?page=offres-recrutement">Offres &amp; recrutement</a></li>
         </ul>
       </div>
       <div class="col-12 col-sm-6 col-md-4 col-lg-3">

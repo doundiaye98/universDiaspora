@@ -27,7 +27,7 @@ ob_start();
         </p>
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
-          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="#services">Voir les 12 pôles</a>
+          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="#services">Voir les 12 services</a>
         </div>
       </div>
       <div class="col-12 col-xl-5">
@@ -47,7 +47,7 @@ ob_start();
           <div class="ud-hero-carousel__top">
             <div class="ud-hero-carousel__badge" aria-hidden="true">
               <span class="ud-hero-carousel__n"><?= (int)$orbitN ?></span>
-              <span class="ud-hero-carousel__t">pôles</span>
+              <span class="ud-hero-carousel__t">services</span>
             </div>
             <div class="ud-hero-carousel__live" aria-live="polite" aria-atomic="true">
               <span data-ud-carousel-status>1 / <?= (int)$orbitN ?></span>
@@ -64,7 +64,7 @@ ob_start();
                 <?php foreach ($orbitServices as $i => $s): ?>
                   <?php
                     $href = $s['external_url'] ?? ($baseUrl . '/?page=' . urlencode((string)$s['slug']));
-                    $ext = !empty($s['external_url']);
+                    $ext = function_exists('ud_service_opens_new_tab') ? ud_service_opens_new_tab($s) : !empty($s['external_url']);
                     $desc = trim((string)($s['description'] ?? ''));
                   ?>
                   <article
@@ -149,7 +149,7 @@ ob_start();
 <section id="services" class="ud-services ud-services--premium py-5">
   <div class="container">
     <div class="ud-section-title text-center mb-4">
-      <div class="ud-section-kicker">Catalogue · 12 pôles d’accompagnement</div>
+      <div class="ud-section-kicker">Catalogue · 12 services d’accompagnement</div>
       <h2 class="ud-title mb-2">Un cabinet, plusieurs expertises</h2>
       <div class="ud-subtitle">
         De la première question au projet abouti, chaque pôle structure votre démarche
@@ -209,7 +209,7 @@ ob_start();
           $voletsForService = $voletsAll[$slug] ?? [];
           $voletsToShow = array_slice($voletsForService, 0, 3);
           $voletsExtra = max(0, count($voletsForService) - count($voletsToShow));
-          $isExternal = !empty($s['external_url']);
+          $isExternal = function_exists('ud_service_opens_new_tab') ? ud_service_opens_new_tab($s) : !empty($s['external_url']);
           $isSoon = !empty($s['coming_soon']);
         ?>
         <article

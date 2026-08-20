@@ -324,7 +324,7 @@ function services_all(PDO $pdo = null): array
         }
         $ids = array_map(static fn($r) => (int)$r['id'], $rows);
         $bulletsByService = services_bullets_map($pdo, $ids);
-        return array_map(static function (array $r) use ($bulletsByService): array {
+        $mapped = array_map(static function (array $r) use ($bulletsByService): array {
             $id = (int)$r['id'];
             return [
                 'id' => $id,
@@ -352,10 +352,27 @@ function services_all(PDO $pdo = null): array
                 'bullets' => $bulletsByService[$id] ?? [],
             ];
         }, $rows);
+        return array_map('ud_service_apply_immobilier_url', $mapped);
     } catch (Throwable $e) {
         $fallback = require __DIR__ . '/../data/services.php';
-        return is_array($fallback) ? $fallback : [];
+        $list = is_array($fallback) ? $fallback : [];
+        return array_map('ud_service_apply_immobilier_url', $list);
     }
+}
+
+function ud_service_apply_immobilier_url(array $service): array
+{
+    if (($service['slug'] ?? '') !== 'immobilier-btp') {
+        return $service;
+    }
+    if (!function_exists('ud_immobilier_btp_url')) {
+        return $service;
+    }
+    $url = ud_immobilier_btp_url();
+    if ($url !== '') {
+        $service['external_url'] = $url;
+    }
+    return $service;
 }
 
 function services_find_by_slug(string $slug, PDO $pdo = null): ?array
@@ -370,7 +387,7 @@ function services_find_by_slug(string $slug, PDO $pdo = null): ?array
         if (!is_array($r)) return null;
         $id = (int)$r['id'];
         $bullets = services_bullets_map($pdo, [$id])[$id] ?? [];
-        return [
+        $found = [
             'id' => $id,
             'slug' => (string)$r['slug'],
             'title' => (string)$r['title'],
@@ -395,11 +412,14 @@ function services_find_by_slug(string $slug, PDO $pdo = null): ?array
             'sort_order' => (int)($r['sort_order'] ?? 0),
             'bullets' => $bullets,
         ];
+        return ud_service_apply_immobilier_url($found);
     } catch (Throwable $e) {
         $fallback = require __DIR__ . '/../data/services.php';
         if (!is_array($fallback)) return null;
         foreach ($fallback as $s) {
-            if (is_array($s) && ($s['slug'] ?? '') === $slug) return $s;
+            if (is_array($s) && ($s['slug'] ?? '') === $slug) {
+                return ud_service_apply_immobilier_url($s);
+            }
         }
         return null;
     }

@@ -21,6 +21,12 @@ return [
          *   URLs {base_url}/assets/img/...
          */
         'assets_public_prefix' => 'public',
+        /**
+         * Site Immobilier & BTP (projet WAMP `immobiler`).
+         * En local : détecté automatiquement (http://localhost/immobiler).
+         * En production : URL publique complète, ex. https://btp.universdiaspora.com
+         */
+        'immobilier_btp_url' => '',
     ],
     'db' => [
         'host' => '127.0.0.1',

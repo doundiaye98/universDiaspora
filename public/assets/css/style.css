@@ -169,16 +169,19 @@ html{
 
 .ud-navlink{
   font-weight: 800;
-  color: rgba(10,24,52,.82) !important;
-  padding: .5rem .75rem !important;
+  color: #fff !important;
+  padding: .55rem .9rem !important;
   border-radius: 999px;
+  background: linear-gradient(152deg, var(--ud-blue) 0%, var(--ud-blue-light) 100%) !important;
+  box-shadow: 0 14px 34px rgba(24,40,88,.22);
+  border: none !important;
 }
-.ud-navlink:hover{
-  background: rgba(24,40,88,.06);
-}
-.ud-navlink.active{
-  background: rgba(24,40,88,.10);
-  color: var(--ud-blue) !important;
+.ud-navlink:hover,
+.ud-navlink:focus-visible,
+.ud-navlink.active,
+.ud-navlink.show{
+  background: linear-gradient(152deg, #152d52 0%, #1e3a6e 100%) !important;
+  color: #fff !important;
 }
 
 .ud-nav-cta{
@@ -5889,11 +5892,17 @@ body.ud-cosmos .ud-rdv-footnote__delay{
   .ud-tabbar__icon{
     display: grid;
     place-items: center;
-    width: 1.7rem;
-    height: 1.7rem;
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #1e3a6e, #0c1730);
+    color: #e8c98a;
+    box-shadow: 0 6px 14px rgba(12,23,48,.22);
   }
   .ud-tabbar__icon svg{
     display: block;
+    width: 1.15rem;
+    height: 1.15rem;
   }
   .ud-tabbar__label{
     font-size: .68rem;
@@ -5901,29 +5910,25 @@ body.ud-cosmos .ud-rdv-footnote__delay{
     letter-spacing: .01em;
     line-height: 1;
     white-space: nowrap;
+    color: #1e3a6e;
   }
-  .ud-tabbar__item.is-active{
-    color: #c4892e;
-  }
-  .ud-tabbar__item--cta .ud-tabbar__icon{
-    width: 2.35rem;
-    height: 2.35rem;
-    border-radius: 999px;
-    background: linear-gradient(145deg, #1e3a6e, #0c1730);
-    color: #e8c98a;
-    box-shadow: 0 8px 18px rgba(12,23,48,.28);
-    margin-top: -.45rem;
-  }
-  .ud-tabbar__item--cta.is-active .ud-tabbar__icon{
+  .ud-tabbar__item.is-active .ud-tabbar__icon{
     background: linear-gradient(145deg, #d9a04a, #c4892e);
     color: #0c1730;
   }
-  .ud-tabbar__item--cta .ud-tabbar__label{
-    color: #1e3a6e;
+  .ud-tabbar__item.is-active .ud-tabbar__label{
+    color: #c4892e;
     font-weight: 800;
   }
-  .ud-tabbar__item--cta.is-active .ud-tabbar__label{
-    color: #c4892e;
+  .ud-tabbar__item--cta .ud-tabbar__icon{
+    width: 2.45rem;
+    height: 2.45rem;
+    margin-top: -.35rem;
+    box-shadow: 0 8px 18px rgba(12,23,48,.28);
+  }
+  .ud-tabbar__item--cta .ud-tabbar__icon svg{
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   .ud-ai-chat{

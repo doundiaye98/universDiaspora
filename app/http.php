@@ -222,3 +222,42 @@ function ud_phone_tel_href(string $phone): string
     return 'tel:+' . ltrim($d, '+');
 }
 
+/**
+ * Site Immobilier & BTP (projet WAMP `www/immobiler`).
+ */
+function ud_immobilier_btp_url(): string
+{
+    $config = require dirname(__DIR__) . '/config/config.php';
+    $configured = trim((string)($config['app']['immobilier_btp_url'] ?? ''));
+    if ($configured !== '') {
+        return rtrim($configured, '/');
+    }
+
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    if ($host === '') {
+        $host = 'localhost';
+    }
+    $scheme = $https ? 'https' : 'http';
+
+    $wwwRoot = dirname(__DIR__, 2);
+    foreach (['immobiler', 'immobilier'] as $dir) {
+        if (is_file($wwwRoot . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . 'index.php')) {
+            return $scheme . '://' . $host . '/' . $dir;
+        }
+    }
+
+    return $scheme . '://' . $host . '/immobiler';
+}
+
+/** Liens vers un autre site (Voyages, Market) : nouvel onglet. Immobilier : même onglet. */
+function ud_service_opens_new_tab(array $service): bool
+{
+    $url = trim((string)($service['external_url'] ?? ''));
+    if ($url === '') {
+        return false;
+    }
+    return ($service['slug'] ?? '') !== 'immobilier-btp';
+}
+

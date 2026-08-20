@@ -1,6 +1,7 @@
 # Secrets locaux (ne jamais commiter)
 /config/config.local.php
 /config/config.wamp.php
+/immobiler/config/config.local.php
 
 # Fichiers candidatures (PDF) — ne pas versionner
 /storage/candidatures/*

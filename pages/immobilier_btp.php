@@ -2,8 +2,12 @@
 declare(strict_types=1);
 
 /**
- * Page Immobilier & BTP — programme YOMBAL KEUR (terrains diaspora).
+ * Immobilier & BTP → site dédié (WAMP : /immobiler).
  */
+$immoSiteUrl = function_exists('ud_immobilier_btp_url') ? ud_immobilier_btp_url() : '';
+if ($immoSiteUrl !== '') {
+    redirect($immoSiteUrl);
+}
 
 $config = require __DIR__ . '/../config/config.php';
 $baseUrl = ud_site_base_url();
