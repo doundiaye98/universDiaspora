@@ -4,7 +4,7 @@ declare(strict_types=1);
 return [
     [
         'slug' => 'conseils-accompagnements',
-        'title' => 'Conseils',
+        'title' => 'Conseils et accompagnement',
         'description' => 'Coaching, orientation et conseils experts pour structurer vos projets.',
         'icon' => 'icon-conseils-accompagnements.jpg',
         'bullets' => [
@@ -123,7 +123,7 @@ return [
     [
         'slug' => 'informatiques',
         'title' => 'Informatiques',
-        'description' => 'Sites web, maintenance et assistance pour digitaliser votre activité.',
+        'description' => 'Sites web, maintenance et assistance — réalisations : Yombal Market, Sunuru Fisquest, Univers Diaspora.',
         'icon' => 'icon-informatiques.jpg',
         'bullets' => [
             'Création sites',
@@ -145,6 +145,19 @@ return [
             'Livraison domicile',
             'Prix abordables',
             'Boutique en ligne',
+        ],
+    ],
+    [
+        'slug' => 'pompes-funebres',
+        'title' => 'Pompes funèbres',
+        'description' => 'Organisation des obsèques, rapatriement et accompagnement des familles avec dignité.',
+        'icon' => 'icon-pompes-funebres.jpg',
+        'bullets' => [
+            'Organisation des obsèques',
+            'Rapatriement de corps',
+            'Démarches administratives',
+            'Cérémonies & hommages',
+            'Accompagnement des familles',
         ],
     ],
     [

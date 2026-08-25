@@ -344,6 +344,63 @@ function ensureContactSchema(PDO $pdo): void
         ':slug' => 'supermarket',
     ]);
 
+    // Titre canonique « Conseils et accompagnement »
+    $pdo->prepare(
+        'UPDATE services SET title = :title WHERE slug = :slug'
+    )->execute([
+        ':title' => 'Conseils et accompagnement',
+        ':slug' => 'conseils-accompagnements',
+    ]);
+
+    // Description Informatiques (projets réalisés)
+    $pdo->prepare(
+        'UPDATE services SET description = :desc WHERE slug = :slug'
+    )->execute([
+        ':desc' => 'Sites web, maintenance et assistance — réalisations : Yombal Market, Sunuru Fisquest, Univers Diaspora.',
+        ':slug' => 'informatiques',
+    ]);
+
+    // Ajoute Pompes funèbres si absent (bases déjà peuplées)
+    $funStmt = $pdo->prepare('SELECT id FROM services WHERE slug = :slug LIMIT 1');
+    $funStmt->execute([':slug' => 'pompes-funebres']);
+    if (!$funStmt->fetchColumn()) {
+        $maxOrder = (int) $pdo->query('SELECT COALESCE(MAX(sort_order), 0) FROM services')->fetchColumn();
+        $ins = $pdo->prepare(
+            'INSERT INTO services (slug, title, description, details, icon, external_url, coming_soon, sort_order)
+             VALUES (:slug, :title, :description, NULL, :icon, NULL, 0, :sort_order)'
+        );
+        $ins->execute([
+            ':slug' => 'pompes-funebres',
+            ':title' => 'Pompes funèbres',
+            ':description' => 'Organisation des obsèques, rapatriement et accompagnement des familles avec dignité.',
+            ':icon' => 'icon-pompes-funebres.jpg',
+            ':sort_order' => $maxOrder + 10,
+        ]);
+        $funId = (int) $pdo->lastInsertId();
+        $bIns = $pdo->prepare('INSERT INTO service_bullets (service_id, bullet, sort_order) VALUES (:sid, :bullet, :sort_order)');
+        $bOrder = 0;
+        foreach ([
+            'Organisation des obsèques',
+            'Rapatriement de corps',
+            'Démarches administratives',
+            'Cérémonies & hommages',
+            'Accompagnement des familles',
+        ] as $bullet) {
+            $bOrder += 10;
+            $bIns->execute([':sid' => $funId, ':bullet' => $bullet, ':sort_order' => $bOrder]);
+        }
+        // Placer juste avant « Autres services » si présent
+        $autres = $pdo->prepare('SELECT sort_order FROM services WHERE slug = :slug LIMIT 1');
+        $autres->execute([':slug' => 'bien-d-autres-services']);
+        $autresOrder = $autres->fetchColumn();
+        if ($autresOrder !== false) {
+            $pdo->prepare('UPDATE services SET sort_order = :so WHERE slug = :slug')->execute([
+                ':so' => ((int) $autresOrder) - 1,
+                ':slug' => 'pompes-funebres',
+            ]);
+        }
+    }
+
     // Icônes photo canoniques (icon-{slug}.jpg) — sync même si la table est déjà peuplée
     $iconSync = [
         'conseils-accompagnements' => 'icon-conseils-accompagnements.jpg',
@@ -357,6 +414,7 @@ function ensureContactSchema(PDO $pdo): void
         'assurances-credits' => 'icon-assurances-credits.jpg',
         'informatiques' => 'icon-informatiques.jpg',
         'supermarket' => 'icon-supermarket.jpg',
+        'pompes-funebres' => 'icon-pompes-funebres.jpg',
         'bien-d-autres-services' => 'icon-bien-d-autres-services.jpg',
     ];
     $iconStmt = $pdo->prepare('UPDATE services SET icon = :icon WHERE slug = :slug');

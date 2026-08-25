@@ -71,6 +71,7 @@ function service_icon_slug_aliases(): array
         'assurances-credits' => 'icon-assurances-credits.jpg',
         'informatiques' => 'icon-informatiques.jpg',
         'supermarket' => 'icon-supermarket.jpg',
+        'pompes-funebres' => 'icon-pompes-funebres.jpg',
         'bien-d-autres-services' => 'icon-bien-d-autres-services.jpg',
     ];
 }
@@ -139,14 +140,16 @@ function service_icon_url(string $iconFilename, string $baseUrl, ?string $servic
         return null;
     };
 
-    // Préférer les nouvelles icônes photo par slug (icon-{slug}.jpg) si présentes
+    // Préférer les nouvelles icônes photo par slug (icon-{slug}.jpg|.svg) si présentes
     $slugKey = strtolower(trim((string)($serviceSlug ?? '')));
     if ($slugKey !== '') {
         $safe = preg_replace('~[^a-z0-9-]~', '', $slugKey) ?? '';
         if ($safe !== '') {
-            $u = $tryFile('icon-' . $safe . '.jpg');
-            if ($u !== null) {
-                return $u;
+            foreach (['jpg', 'svg', 'png', 'webp'] as $ext) {
+                $u = $tryFile('icon-' . $safe . '.' . $ext);
+                if ($u !== null) {
+                    return $u;
+                }
             }
         }
         $aliases = service_icon_slug_aliases();

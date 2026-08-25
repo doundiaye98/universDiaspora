@@ -44,6 +44,10 @@ DirectoryIndex index.php index.html
     RewriteEngine On
     # Pas de RewriteBase fixe : fonctionne à la racine (Hostinger) et en sous-dossier (WAMP /universDiaspora).
 
+    # Mini-site Immobilier & BTP : ne jamais router via index.php du site principal
+    RewriteRule ^immobiler(/|$) - [L]
+    RewriteRule ^immobilier(/|$) - [L]
+
     # Rendez-vous : URLs lisibles (/rendez-vous/slug/volet) — priorité avant test -f/-d
     RewriteRule ^rendez-vous/?$ index.php?page=rendez-vous [L,QSA,NC]
     RewriteRule ^rendez-vous/([a-z0-9-]{1,120})/?$ index.php?page=rendez-vous&service=$1 [L,QSA,NC]

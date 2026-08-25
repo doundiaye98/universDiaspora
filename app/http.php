@@ -223,7 +223,7 @@ function ud_phone_tel_href(string $phone): string
 }
 
 /**
- * Site Immobilier & BTP (projet WAMP `www/immobiler`).
+ * Site Immobilier & BTP (projet `immobiler` à la racine du site).
  */
 function ud_immobilier_btp_url(): string
 {
@@ -234,17 +234,21 @@ function ud_immobilier_btp_url(): string
     }
 
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443);
     $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
     if ($host === '') {
         $host = 'localhost';
     }
     $scheme = $https ? 'https' : 'http';
 
-    $wwwRoot = dirname(__DIR__, 2);
-    foreach (['immobiler', 'immobilier'] as $dir) {
-        if (is_file($wwwRoot . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . 'index.php')) {
-            return $scheme . '://' . $host . '/' . $dir;
+    $siteRoot = dirname(__DIR__);
+    $wwwRoot = dirname($siteRoot);
+    foreach ([$siteRoot, $wwwRoot] as $root) {
+        foreach (['immobiler', 'immobilier'] as $dir) {
+            if (is_file($root . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . 'index.php')) {
+                return $scheme . '://' . $host . '/' . $dir;
+            }
         }
     }
 

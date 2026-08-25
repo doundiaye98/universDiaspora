@@ -22,7 +22,7 @@ $manifest = [
     'id' => $baseUrl . '/',
     'name' => 'Univers Diaspora',
     'short_name' => 'UD Diaspora',
-    'description' => 'Conseil et accompagnement pour la diaspora — Paris 18e, Paris 17e et Colombes. Prendre rendez-vous et découvrir nos 12 services.',
+    'description' => 'Conseil et accompagnement pour la diaspora — Paris 18e, Paris 17e et Colombes. Prendre rendez-vous et découvrir nos 13 services.',
     'lang' => 'fr-FR',
     'dir' => 'ltr',
     'start_url' => $baseUrl . '/?utm_source=pwa',

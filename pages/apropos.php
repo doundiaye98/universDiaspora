@@ -46,7 +46,7 @@ ob_start();
         </p>
         <div class="ud-apropos__actions">
           <a class="btn btn-primary ud-btn ud-btn--cta" href="<?= h(ud_appointment_url($baseUrl)) ?>">Prendre rendez-vous</a>
-          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#services">Voir les 12 services</a>
+          <a class="btn btn-outline-light ud-btn ud-btn--ghost ud-btn--on-dark" href="<?= h($baseUrl) ?>/#services">Voir les 13 services</a>
         </div>
       </div>
     </header>

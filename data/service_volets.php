@@ -319,7 +319,7 @@ return [
             'id' => 'info-creation-sites',
             'label' => 'Création sites',
             'lead' => 'Un site web utile, sobre et facile à maintenir.',
-            'text' => 'Cadrage des objectifs, choix de la solution adaptée (vitrine, boutique, prise de rendez‑vous) et accompagnement dans la mise en ligne. Nous privilégions ce qui sert vraiment votre activité.',
+            'text' => 'Cadrage des objectifs, choix de la solution adaptée (vitrine, boutique, prise de rendez‑vous) et accompagnement dans la mise en ligne. Parmi nos réalisations : Yombal Market, Sunuru Fisquest (commune de Rufisque-Est) et Univers Diaspora.',
         ],
         [
             'id' => 'info-assistance',
@@ -377,6 +377,39 @@ return [
             'label' => 'Boutique en ligne',
             'lead' => 'Une boutique simple à utiliser.',
             'text' => 'La boutique en ligne est en préparation. Vous serez informé de l’ouverture et des premières fonctionnalités via votre compte ou notre formulaire de contact.',
+        ],
+    ],
+
+    'pompes-funebres' => [
+        [
+            'id' => 'funebres-obseques',
+            'label' => 'Organisation des obsèques',
+            'lead' => 'Un accompagnement clair, digne et sans précipitation.',
+            'text' => 'Nous vous aidons à organiser les obsèques selon vos souhaits et traditions : choix du mode de cérémonie, coordination des prestataires et suivi des étapes. Vous restez décisionnaire ; nous structurons le parcours pour alléger la charge mentale.',
+        ],
+        [
+            'id' => 'funebres-rapatriement',
+            'label' => 'Rapatriement de corps',
+            'lead' => 'Coordonner un rapatriement dans le respect des procédures.',
+            'text' => 'Rapatriement vers le pays d’origine : préparation du dossier, liaison avec les interlocuteurs utiles et suivi des formalités. Chaque situation est traitée avec discrétion et un référent unique pour vous tenir informé.',
+        ],
+        [
+            'id' => 'funebres-demarches',
+            'label' => 'Démarches administratives',
+            'lead' => 'Clarifier les formalités au moment où elles pèsent le plus.',
+            'text' => 'Actes, déclarations, pièces à réunir, interlocuteurs à contacter : nous vous guidons dans l’ordre des démarches pour éviter les oublis et les allers-retours inutiles.',
+        ],
+        [
+            'id' => 'funebres-ceremonies',
+            'label' => 'Cérémonies & hommages',
+            'lead' => 'Honorer la mémoire dans le respect de vos convictions.',
+            'text' => 'Cérémonie religieuse, civile ou culturelle : nous vous aidons à préparer un hommage cohérent avec vos traditions, votre budget et le calendrier familial.',
+        ],
+        [
+            'id' => 'funebres-familles',
+            'label' => 'Accompagnement des familles',
+            'lead' => 'Une présence humaine, confidentielle et disponible.',
+            'text' => 'Écoute, orientation et points de suivi pour soutenir la famille pendant et après les obsèques. Notre rôle est d’organiser et d’accompagner, sans jamais se substituer aux professionnels funéraires habilités lorsque la réglementation l’exige.',
         ],
     ],
 

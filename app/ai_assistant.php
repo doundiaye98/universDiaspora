@@ -678,7 +678,7 @@ function ud_ai_assistant_fallback_answer(string $question, string $baseUrl, ?str
         || $intent === null && $q !== ''
     ) {
         return implode("\n", [
-            'Univers Diaspora couvre plusieurs pôles : conseils, immobilier et BTP, voyages, création et gestion d’entreprises, transports, assistances administratives, formation et emplois, services à la personne, assurances et crédits, informatique, et autres services à venir.',
+            'Univers Diaspora couvre plusieurs pôles : conseils et accompagnement, immobilier et BTP, voyages, création et gestion d’entreprises, transports, assistances administratives, formation et emplois, services à la personne, assurances et crédits, informatique, supermarket, pompes funèbres, et autres services.',
             'Pour vous orienter précisément, indiquez en une phrase votre besoin principal (achat, vente, location, création, financement, démarche, formation, etc.).',
             '',
             '→ Tous les services : ' . $servicesUrl,

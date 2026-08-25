@@ -95,6 +95,13 @@ $serviceVolets = isset($voletsAll[$currentSlug]) && is_array($voletsAll[$current
     : [];
 $hasVolets = !empty($serviceVolets);
 
+$projectsAllPath = __DIR__ . '/../data/service_projects.php';
+$projectsAll = is_file($projectsAllPath) ? require $projectsAllPath : [];
+$serviceProjects = (isset($projectsAll[$currentSlug]) && is_array($projectsAll[$currentSlug]))
+    ? $projectsAll[$currentSlug]
+    : [];
+$hasProjects = !empty($serviceProjects);
+
 $serviceDisclaimers = [
     'assurances-credits' =>
         'Univers Diaspora n’est ni établissement bancaire, ni intermédiaire en opérations bancaires et services de paiement (IOBSP), ni intermédiaire en assurance. '
@@ -114,6 +121,9 @@ $serviceDisclaimers = [
     'formations-emplois' =>
         'Univers Diaspora propose un accompagnement à l’orientation et à la recherche d’emploi. '
         . 'Le recours à un organisme de formation enregistré (Qualiopi le cas échéant) ou à un opérateur public de l’emploi reste à votre initiative.',
+    'pompes-funebres' =>
+        'Univers Diaspora accompagne les familles dans l’organisation et les démarches liées aux obsèques. '
+        . 'Les prestations funéraires réglementées sont réalisées par des opérateurs funéraires habilités ; nous coordonnons et orientons sans nous y substituer.',
 ];
 $customDisclaimer = $serviceDisclaimers[$currentSlug] ?? '';
 
@@ -257,6 +267,65 @@ ob_start();
             </article>
           <?php endforeach; ?>
         </div>
+      </section>
+    <?php endif; ?>
+
+    <?php if ($hasProjects): ?>
+      <section class="at-showcase at-reveal" aria-labelledby="at-projects-heading">
+        <div class="at-showcase__glow" aria-hidden="true"></div>
+        <div class="at-showcase__head">
+          <p class="at-showcase__kicker">Réalisations</p>
+          <h2 id="at-projects-heading" class="at-showcase__title">
+            Projets <em>réalisés</em>
+          </h2>
+          <p class="at-showcase__sub">Trois sites conçus, développés et mis en ligne par Univers Diaspora.</p>
+        </div>
+
+        <ol class="at-showcase__list">
+          <?php foreach ($serviceProjects as $idx => $project): ?>
+            <?php
+            $pUrl = trim((string)($project['url'] ?? ''));
+            $pName = (string)($project['name'] ?? '');
+            $pLabel = (string)($project['label'] ?? '');
+            $pText = (string)($project['text'] ?? '');
+            $pTag = trim((string)($project['tag'] ?? ''));
+            $pTone = preg_replace('~[^a-z0-9-]~', '', strtolower((string)($project['tone'] ?? ''))) ?: 'default';
+            $pNum = str_pad((string)((int)$idx + 1), 2, '0', STR_PAD_LEFT);
+            $pHost = $pUrl !== '' ? (string)(parse_url($pUrl, PHP_URL_HOST) ?: '') : '';
+            $nameParts = preg_split('/\s+/u', trim($pName)) ?: [$pName];
+            $nameLead = count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 0, -1)) : '';
+            $nameAccent = count($nameParts) > 1 ? (string)end($nameParts) : (string)$nameParts[0];
+            ?>
+            <li class="at-showcase__item at-showcase__item--<?= h($pTone) ?>">
+              <a class="at-showcase__card" href="<?= h($pUrl) ?>" target="_blank" rel="noopener noreferrer">
+                <span class="at-showcase__index" aria-hidden="true"><?= h($pNum) ?></span>
+                <span class="at-showcase__body">
+                  <span class="at-showcase__meta">
+                    <span class="at-showcase__label"><?= h($pLabel) ?></span>
+                    <?php if ($pTag !== ''): ?>
+                      <span class="at-showcase__tag"><?= h($pTag) ?></span>
+                    <?php endif; ?>
+                  </span>
+                  <span class="at-showcase__name">
+                    <?php if ($nameLead !== ''): ?>
+                      <?= h($nameLead) ?> <em><?= h($nameAccent) ?></em>
+                    <?php else: ?>
+                      <em><?= h($nameAccent) ?></em>
+                    <?php endif; ?>
+                  </span>
+                  <span class="at-showcase__text"><?= h($pText) ?></span>
+                  <?php if ($pHost !== ''): ?>
+                    <span class="at-showcase__host"><?= h($pHost) ?></span>
+                  <?php endif; ?>
+                </span>
+                <span class="at-showcase__cta">
+                  <span class="at-showcase__cta-label">Découvrir</span>
+                  <span class="at-showcase__cta-arrow" aria-hidden="true">→</span>
+                </span>
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ol>
       </section>
     <?php endif; ?>
 
